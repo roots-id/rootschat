@@ -1,29 +1,14 @@
 import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, StyleSheet, View } from 'react-native';
-import { Button, Dialog, Divider, List, Portal } from 'react-native-paper';
+import { Divider, List } from 'react-native-paper';
 
 import { getChannelDisplayName, getAllChannels } from '../roots';
 import Loading from '../components/Loading';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [leaveChannel, setLeaveChannel] = useState(null);
-
-  function handleLeaveChannel() {
-    leaveChannel({ channel: leaveChannel }).then(() => {
-      setLeaveChannel(null);
-
-      getAllChannels({ filter: { joined: true } }).then((result) => {
-        setChannels(result.paginator.items);
-      });
-    });
-  }
-
-  function handleDismissLeaveChannel() {
-    setLeaveChannel(null);
-  }
 
   const isFocused = useIsFocused();
 
@@ -57,28 +42,18 @@ export default function HomeScreen({ navigation }) {
         ItemSeparatorComponent={() => <Divider />}
         renderItem={({ item }) => (
           <List.Item
-            title={getChannelDisplayName(item)}
-            description={item.type}
+            title="item name"
+            description="item description"
             titleNumberOfLines={1}
             titleStyle={styles.listTitle}
             descriptionStyle={styles.listDescription}
             descriptionNumberOfLines={1}
-            onPress={() => navigation.navigate('Chat', { channel: item })}
-            onLongPress={() => {
-              setLeaveChannel(item);
+            onPress={() => {
+                //TODO navigate to a chat screen
             }}
           />
         )}
       />
-      <Portal>
-        <Dialog visible={leaveChannel} onDismiss={handleDismissLeaveChannel}>
-          <Dialog.Title>Leave channel?</Dialog.Title>
-          <Dialog.Actions>
-            <Button onPress={handleDismissLeaveChannel}>Cancel</Button>
-            <Button onPress={handleLeaveChannel}>Confirm</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </View>
   );
 }
