@@ -6,7 +6,7 @@ import { Divider, List } from 'react-native-paper';
 import { getChannelDisplayName, getAllChannels } from '../roots';
 import Loading from '../components/Loading';
 
-export default function HomeScreen() {
+export default function HomeScreen({navigation}) {
   const [channels, setChannels] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,9 +33,9 @@ export default function HomeScreen() {
     return <Loading />;
   }
 
-    const renderItem = ({ item }) => (
-      <Item title={item.title} />
-    );
+//    const renderItem = ({ item }) => (
+//      <Item title={item.title} />
+//    );
 //    const DATA = [
 //      {
 //        id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
@@ -52,11 +52,11 @@ export default function HomeScreen() {
 //    ];
 
 //    const DATA1 = getAllChannels();
-    const Item = ({ title }) => (
-      <View style={styles.item}>
-        <Text style={styles.title}>{title}</Text>
-      </View>
-    );
+//    const Item = ({ title }) => (
+//      <View style={styles.item}>
+//        <Text style={styles.title}>{title}</Text>
+//      </View>
+//    );
 
 //            <SafeAreaView style={styles.container}>
 //                    <FlatList
@@ -65,29 +65,27 @@ export default function HomeScreen() {
 //                      keyExtractor={item => item.id}
 //                    />
 //              </SafeAreaView>
+//<Text style={styles.title}>rock</Text>
   return (
     <View style={styles.container}>
-            <Text style={styles.title}>rock</Text>
-            <SafeAreaView style={styles.container}>
-                  <FlatList
-                          data={channels}
-                          keyExtractor={(item) => item.id.toString()}
-                          ItemSeparatorComponent={() => <Divider />}
-                          renderItem={({ item }) => (
-                                                      <List.Item
-                                                          title={item.name}
-                                                          description={item.type}
-                                                          titleNumberOfLines={1}
-                                                          titleStyle={styles.listTitle}
-                                                          descriptionStyle={styles.listDescription}
-                                                          descriptionNumberOfLines={1}
-                                                          onPress={() => {
-                                                            // TODO navigate to a chat screen.
-                                                          }}
-                                                      />
-                                                  )}
-                  />
-            </SafeAreaView>
+        <SafeAreaView style={styles.container}>
+              <FlatList
+                  data={channels}
+                  keyExtractor={(item) => item.id.toString()}
+                  ItemSeparatorComponent={() => <Divider />}
+                  renderItem={({ item }) => (
+                                              <List.Item
+                                                  title={item.name}
+                                                  description={item.type}
+                                                  titleNumberOfLines={1}
+                                                  titleStyle={styles.listTitle}
+                                                  descriptionStyle={styles.listDescription}
+                                                  descriptionNumberOfLines={1}
+                                                  onPress={() => navigation.navigate('Chat', { channel: item })}
+                                              />
+                                          )}
+              />
+        </SafeAreaView>
     </View>
 
   );

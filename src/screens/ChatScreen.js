@@ -1,12 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, GiftedChat } from 'react-native-gifted-chat';
 
-import { getMessages, sendMessage, startChatSession } from '/roots';
-import Loading from '/components/Loading';
-import { AuthContext } from '/navigation/AuthProvider';
+import { getMessages, sendMessage, startChatSession } from '../roots';
+import Loading from '../components/Loading';
+import { AuthContext } from '../navigation/AuthProvider';
 
 export default function ChatScreen({ route }) {
-  const { user } = useContext(AuthContext);
+  //useContext(AuthContext)
+  const { user } = {id: "esteban",
+                    displayName: "Essbante",
+                    displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",};
   const { channel } = route.params;
 
   const [messages, setMessages] = useState([]);
@@ -78,9 +81,14 @@ function mapMessage(message) {
 }
 
 function mapUser(user) {
+  console.log("Map User",user);
+  if(user) {
   return {
     _id: user.id,
     name: user.displayName,
     avatar: user.displayPictureUrl,
   };
+  } else {
+    console.log("User undefined")
+  }
 }
