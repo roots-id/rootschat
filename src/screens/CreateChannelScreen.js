@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { IconButton, Title } from 'react-native-paper';
+import { v4 as uuidv4 } from 'uuid';
 
 import { createChannel } from '../roots';
 import FormButton from '../components/FormButton';
@@ -11,10 +12,14 @@ export default function CreateChannelScreen({ navigation }) {
 
   function handleButtonPress() {
     if (channelName.length > 0) {
-      createChannel({
-        type: 'PUBLIC',
-        name: channelName,
-      })
+      let channelJson = {
+                          id: uuidv4(),
+                          joined: false,
+                          name: channelName,
+                          title: "Created Channel",
+                          type: "DIRECT",
+                        };
+      createChannel(channelJson)
       .then(() => navigation.navigate('Home'));
     }
   }

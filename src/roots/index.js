@@ -28,25 +28,32 @@ const channels = [
       title: "Third Channel",
       type: "OTHER",
     },
+    {
+      id: "69704a0f-3da1-471f-bd96-145571da8c61",
+      joined: false,
+      name: "Channel 4",
+      title: "Fourth Channel",
+      type: "DIRECT",
+    },
 ];
 
+//TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channel) {
     const promise1 = new Promise((resolve, reject) => {
-        //TODO log public DIDs and/or create Pairwise DIDs
         channels.push(channel)
         resolve(channels);
     });
     return promise1;
 }
 
+//TODO iterate to verify DID connections if cache is expired
 export function getAllChannels () {
     channels.forEach(function (item, index) {
       console.log("getting channels",index+".",item.name);
     });
 
     const promise1 = new Promise((resolve, reject) => {
-        //TODO iterate to verify DID connections if cache is expired
-          let result = {paginator: channels};
+        let result = {paginator: {items: channels}};
         resolve(result);
     });
     return promise1;
@@ -59,4 +66,16 @@ export function getChannelDisplayName(channel) {
   } else {
     return channel.name;
   }
+}
+
+export function getMessages() {
+
+}
+
+export function sendMessage() {
+
+}
+
+export function startChatSession() {
+
 }

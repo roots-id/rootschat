@@ -1,75 +1,86 @@
-import { useIsFocused } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { Divider, List, Title } from 'react-native-paper';
+import React, { useContext, useEffect, useState } from 'react';
+import { Bubble, GiftedChat } from 'react-native-gifted-chat';
 
-import { getChannelDisplayName, allIssuers } from '../roots';
+import { getMessages, sendMessage, startChatSession } from '/roots';
+import Loading from '/components/Loading';
+import { AuthContext } from '/navigation/AuthProvider';
 
-export default function ChatScreen({ navigation }) {
-  const [channels, setChannels] = useState();
-  const [loading, setLoading] = useState(false);
+export default function ChatScreen({ route }) {
+  const { user } = useContext(AuthContext);
+  const { channel } = route.params;
 
-  const isFocused = useIsFocused();
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isCancelled = false;
-
-    allIssuers().then((result) => {
-      if (!isCancelled) {
-        setChannels(result);
-
-        if (loading) {
-          setLoading(false);
-        }
-      }
+    const startChatSessionResult = startChatSession({
+      channel: channel,
+      onReceivedMessage: (message) => {
+        setMessages((currentMessages) =>
+            GiftedChat.append(currentMessages, [mapMessage(message)])
+        );
+      },
     });
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [isFocused, loading]);
+    getMessages({
+      channel: channel,
+    })
+    .then((result) => {
+      setMessages(result.paginator.items.map(mapMessage));
+
+      setLoading(false);
+    });
+
+    return startChatSessionResult.session.end;
+  }, [user, channel]);
+
+  async function handleSend(pendingMessages) {
+    await sendMessage({
+      channel: channel,
+      body: pendingMessages[0].text,
+    });
+  }
+
+  function renderBubble(props) {
+    return (
+        <Bubble
+            {...props}
+            wrapperStyle={{
+              left: {
+                backgroundColor: '#d3d3d3',
+              },
+            }}
+        />
+    );
+  }
 
   if (loading) {
     return <Loading />;
   }
 
   return (
-      <View style={styles.container}>
-        <Title>RootsWallet Chat</Title>
-
-        <View style={styles.container}>
-          <FlatList
-              data={channels}
-              keyExtractor={(item) => item.id.toString()}
-              ItemSeparatorComponent={() => <Divider />}
-              renderItem={({ item }) => (
-                  <List.Item
-                      title={item.name}
-                      description={item.type}
-                      titleNumberOfLines={1}
-                      titleStyle={styles.listTitle}
-                      descriptionStyle={styles.listDescription}
-                      descriptionNumberOfLines={1}
-                      onPress={() => {
-                        // TODO navigate to a chat screen.
-                      }}
-                  />
-              )}
-          />
-        </View>
-      </View>
+      <GiftedChat
+          messages={messages}
+          onSend={handleSend}
+          user={mapUser(user)}
+          renderBubble={renderBubble}
+      />
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#f5f5f5',
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  titleText: {
-    fontSize: 24,
-    marginBottom: 10,
-  },
-});
+function mapMessage(message) {
+  return {
+    _id: message.id,
+    text: message.body,
+    createdAt: new Date(message.createdTime),
+    user: mapUser(message.user),
+  };
+}
+
+function mapUser(user) {
+  return {
+    _id: user.id,
+    name: user.displayName,
+    avatar: user.displayPictureUrl,
+  };
+}
