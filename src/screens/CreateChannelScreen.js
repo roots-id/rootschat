@@ -16,11 +16,11 @@ export default function CreateChannelScreen({ navigation }) {
                           id: uuidv4(),
                           joined: false,
                           name: channelName,
-                          title: "Created Channel",
+                          title: "Created Example",
                           type: "DIRECT",
                         };
       createChannel(channelJson)
-      .then(() => navigation.navigate('Home'));
+      .then(() => navigation.navigate('Examples'));
     }
   }
 
@@ -37,7 +37,7 @@ export default function CreateChannelScreen({ navigation }) {
         <View style={styles.innerContainer}>
           <Title style={styles.title}>Create a new channel</Title>
           <FormInput
-              labelName="Channel Name"
+              labelName="Example"
               value={channelName}
               onChangeText={(text) => setChannelName(text)}
               clearButtonMode="while-editing"
@@ -57,6 +57,7 @@ export default function CreateChannelScreen({ navigation }) {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
+    backgroundColor: '#222222',
   },
   closeButtonContainer: {
     position: 'absolute',
@@ -72,6 +73,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     marginBottom: 10,
+    color: '#dddddd',
   },
   buttonLabel: {
     fontSize: 22,

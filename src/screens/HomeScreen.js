@@ -74,16 +74,16 @@ export default function HomeScreen({navigation}) {
                   keyExtractor={(item) => item.id.toString()}
                   ItemSeparatorComponent={() => <Divider />}
                   renderItem={({ item }) => (
-                                              <List.Item
-                                                  title={item.name}
-                                                  description={item.type}
-                                                  titleNumberOfLines={1}
-                                                  titleStyle={styles.listTitle}
-                                                  descriptionStyle={styles.listDescription}
-                                                  descriptionNumberOfLines={1}
-                                                  onPress={() => navigation.navigate('Chat', { channel: item })}
-                                              />
-                                          )}
+                      <List.Item
+                          title={item.name}
+                          description={item.type}
+                          titleNumberOfLines={1}
+                          titleStyle={styles.listTitle}
+                          descriptionStyle={styles.listDescription}
+                          descriptionNumberOfLines={1}
+                          onPress={() => navigation.navigate('Messages', { channel: item })}
+                      />
+                  )}
               />
         </SafeAreaView>
     </View>
@@ -93,17 +93,19 @@ export default function HomeScreen({navigation}) {
 
     const styles = StyleSheet.create({
       container: {
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#222222',
         flex: 1,
       },
       listTitle: {
         fontSize: 22,
+        color: '#dddddd',
       },
       listDescription: {
         fontSize: 16,
+        color: '#dddddd',
       },
       item: {
-          backgroundColor: '#f9c2ff',
+          backgroundColor: '#222222',
           padding: 20,
           marginVertical: 8,
           marginHorizontal: 16,

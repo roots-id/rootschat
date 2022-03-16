@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Bubble, GiftedChat } from 'react-native-gifted-chat';
+import { Bubble, ChatInput, GiftedChat, InputToolbar, SendButton } from 'react-native-gifted-chat';
+import { View } from 'react-native';
 
 import { getMessages, sendMessage, startChatSession } from '../roots';
 import Loading from '../components/Loading';
@@ -58,17 +59,34 @@ export default function ChatScreen({ route }) {
     );
   }
 
+    function renderInputToolbar(props) {
+      return (
+          <InputToolbar
+              {...props}
+                  containerStyle={{
+                    backgroundColor: "222222",
+                    borderTopColor: "#dddddd",
+                    borderTopWidth: 1,
+                    padding: 1
+                  }}
+          />
+      );
+    }
+
   if (loading) {
     return <Loading />;
   }
 
   return (
+    <View style={{ backgroundColor: "#222222", flex: 1 }}>
       <GiftedChat
           messages={messages}
           onSend={handleSend}
           user={mapUser(user)}
           renderBubble={renderBubble}
+          renderInputToolbar={props => renderInputToolbar(props)}
       />
+    </View>
   );
 }
 
