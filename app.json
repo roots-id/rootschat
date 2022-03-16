@@ -1,14 +1,15 @@
 {
   "expo": {
-    "name": "chatkitty-tutorial",
-    "slug": "chatkitty-tutorial",
-    "version": "1.0.0",
+    "owner": "rootsexpo",
+    "name": "RootsChat Prototyping",
+    "slug": "rootschatproto",
+    "version": "0.0.1",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/LogoOnly1024.png",
     "splash": {
-      "image": "./assets/BlackTextGlow.png",
+      "image": "./assets/WhiteTextExtraGlow.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#111111"
     },
     "updates": {
       "fallbackToCacheTimeout": 0
@@ -21,12 +22,12 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      }
+        "foregroundImage": "./assets/LogoOnly1024.png",
+        "backgroundColor": "#111111"
+      },
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/LogoOnly1024.png"
     }
   }
 }

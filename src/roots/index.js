@@ -122,8 +122,22 @@ export function getMessages(selectedChannel) {
     return promise1;
 }
 
-export function sendMessage() {
+//{
+//        channel: channel,
+//        body: pendingMessages[0].text,
+//      }
+export function sendMessage(newMessage) {
+    console.log("getting messages for channel",selectedChannel.channel.id);
+    const channelMsgs = channelsMessages[selectedChannel.channel.id];
+    channelMsgs.forEach(function (item, index) {
+      console.log("channel",selectedChannel.channel.name,"has message",index+".",item.id);
+    });
 
+    const promise1 = new Promise((resolve, reject) => {
+        let result = {paginator: {items: channelMsgs}};
+        resolve(result);
+    });
+    return promise1;
 }
 
 //     {

@@ -7,9 +7,10 @@ import { AuthContext } from '../navigation/AuthProvider';
 
 export default function ChatScreen({ route }) {
   //useContext(AuthContext)
-  const { user } = {id: "esteban",
+  const [ user, setUser ] = useState({id: "esteban",
                     displayName: "Essbante",
-                    displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",};
+                    displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
+                    });
   const { channel } = route.params;
 
   const [messages, setMessages] = useState([]);
@@ -72,6 +73,7 @@ export default function ChatScreen({ route }) {
 }
 
 function mapMessage(message) {
+  console.log("Map message for gifted",message);
   return {
     _id: message.id,
     text: message.body,
@@ -81,14 +83,10 @@ function mapMessage(message) {
 }
 
 function mapUser(user) {
-  console.log("Map User",user);
-  if(user) {
+  console.log("Map User for gifted",user);
   return {
     _id: user.id,
     name: user.displayName,
     avatar: user.displayPictureUrl,
   };
-  } else {
-    console.log("User undefined")
-  }
 }
