@@ -2,16 +2,17 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, GiftedChat, InputToolbar, SendButton } from 'react-native-gifted-chat';
 import { View } from 'react-native';
 
-import { getMessages, sendMessage, startChatSession } from '../roots';
+import { getFakeUser, getMessages, sendMessage, startChatSession } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
 export default function ChatScreen({ route }) {
   //useContext(AuthContext)
-  const [ user, setUser ] = useState({id: "esteban",
-                    displayName: "Essbante",
-                    displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
-                    });
+//  {id: "esteban",
+//                      displayName: "Essbante",
+//                      displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
+//                      }
+  const [ user, setUser ] = useState(getFakeUser());
   const { channel } = route.params;
 
   const [messages, setMessages] = useState([]);
@@ -77,14 +78,15 @@ export default function ChatScreen({ route }) {
     return <Loading />;
   }
 
+
   return (
-    <View style={{ backgroundColor: "#222222", flex: 1 }}>
+    <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
       <GiftedChat
-          messages={messages}
+          messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
           onSend={handleSend}
           user={mapUser(user)}
           renderBubble={renderBubble}
-          renderInputToolbar={props => renderInputToolbar(props)}
+          showUserAvatar={true}
       />
     </View>
   );

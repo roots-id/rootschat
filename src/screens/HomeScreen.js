@@ -75,8 +75,7 @@ export default function HomeScreen({navigation}) {
                   ItemSeparatorComponent={() => <Divider />}
                   renderItem={({ item }) => (
                       <List.Item
-                          title={item.name}
-                          description={item.type}
+                          title={item.title}
                           titleNumberOfLines={1}
                           titleStyle={styles.listTitle}
                           descriptionStyle={styles.listDescription}

@@ -1,3 +1,6 @@
+import rwLogo from '../assets/LogoOnly1024.png'
+import personLogo from '../assets/smallBWPerson.png'
+
 const members1 = [
     {
       displayName: "jim",
@@ -6,76 +9,95 @@ const members1 = [
 
 const channels = [
     {
-      id: "bd7acbea-c1b1-46c2-aed5-3ad53abb28ba",
+      id: "1",
       joined: true,
       members: members1,
       name: "Channel 1",
-      title: "First Channel",
+      title: "Achievements Example",
       type: "DIRECT",
     },
     {
-      id: "3ac68afc-c605-48d3-a4f8-fbd91aa97f63",
+      id: "2",
       joined: true,
       members: [],
       name: "Channel 2",
-      title: "Second Channel",
+      title: "Bartender Example",
       type: "PUBLIC",
     },
     {
-      id: "58694a0f-3da1-471f-bd96-145571e29d72",
+      id: "3",
       joined: true,
       name: "Channel 3",
-      title: "Third Channel",
+      title: "Reputation Example",
       type: "OTHER",
     },
     {
-      id: "69704a0f-3da1-471f-bd96-145571da8c61",
+      id: "4",
       joined: false,
       name: "Channel 4",
-      title: "Fourth Channel",
+      title: "Revoked Credential Example",
       type: "DIRECT",
     },
 ];
 
+//https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
+//https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280
+export const rootsLogo = rwLogo;
+
 const users = [
     {
-        id: "lance",
-        displayName: "MeGrimLance",
-        displayPictureUrl:"https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280",
+        id: "RootsWalletBot1",
+        displayName: "RootsWallet",
+        displayPictureUrl: rwLogo,
     },
     {
-        id: "esteban",
-        displayName: "Essbante",
-        displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
+        id: "TestUser1",
+        displayName: "TestUser",
+        displayPictureUrl: personLogo,
     },
 ];
 
-const ch1Messages = [
+export function getFakeUser() {
+    return users[1];
+}
+
+export function getRootsWalletUser() {
+    return users[0];
+}
+
+const achievementMsgs = [
     {
       id: "message1",
-      body: "Can i send you a credential",
+      body: "Achievement: Opened RootsWallet!",
       type: "text",
       createdTime: "1",
       user: users[0],
     },
     {
       id: "message2",
-      body: "sure!",
-      type: "text",
+      body: "{subject: you,issuer: RootsWallet,credential: Clicked Example}",
+      type: "jsonCredential",
       createdTime: "2",
-      user: users[1],
+      user: users[0],
     },
     {
       id: "message3",
-      body: "VC1",
-      type: "credential",
+      body: "Achievement: Clicked Example",
+      type: "text",
       createdTime: "3",
+      user: users[0],
+    },
+    {
+      id: "message4",
+      body: "{subject: you,issuer: RootsWallet,credential: Clicked Example}",
+      type: "jsonCredential",
+      createdTime: "4",
       user: users[0],
     },
 ];
 
 const channelsMessages = []
-channelsMessages[channels[0].id] = ch1Messages;
+channelsMessages[channels[0].id] = achievementMsgs;
 
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channel) {
