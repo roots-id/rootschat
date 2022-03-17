@@ -54,7 +54,7 @@ function ChatComponent() {
                     name="Messages"
                     component={ChatScreen}
                     options={({ route }) => ({
-                      title: route.params.channel.name,
+                      title: route.params.channel.title,
                     })}
                 />
       </ChatStack.Navigator>
