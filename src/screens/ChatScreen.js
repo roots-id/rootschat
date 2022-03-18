@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, GiftedChat, InputToolbar, SendButton } from 'react-native-gifted-chat';
-import { View } from 'react-native';
+import { NativeModules, View } from 'react-native';
 
 import { getFakeUser, getMessages, rootsLogo, sendMessage, startChatSession } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
+
+const { PrismModule } = NativeModules;
 
 //import emojiUtils from 'emoji-utils';
 //import SlackMessage from '../components/SlackMessage';
@@ -43,6 +45,7 @@ export default function ChatScreen({ route }) {
     return startChatSessionResult.session.end;
   }, [user, channel]);
 
+//    //body: PrismModule.createDID(pendingMessages[0].text),
   async function handleSend(pendingMessages) {
     await sendMessage({
       channel: channel,

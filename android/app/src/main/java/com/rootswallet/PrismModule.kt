@@ -18,6 +18,8 @@ import io.iohk.atala.prism.protos.*;
 
 class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
+
+
     override fun getName(): String {
         return "PrismModule"
     }

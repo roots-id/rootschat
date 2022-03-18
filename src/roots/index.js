@@ -1,7 +1,20 @@
 import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
+import uuid from 'react-native-uuid';
+
+import generateDID from '../prism'
 
 const currentTime = new Date().getTime();
+
+function createMessage(idText,bodyText,statusText,timeInMillis,userJson) {
+    return {
+        id: idText,
+        body: bodyText,
+        type: statusText,
+        crreatedTime: timeInMillis,
+        user: userJson,
+    }
+}
 
 const members1 = [
     {
@@ -9,9 +22,13 @@ const members1 = [
     },
 ]
 
+//const DIDs = [
+//createDID("testDid1",1), createDID("testDid2",2), createDID("testDid3",3), createDID("testDid4",4)
+//]
+
 const channels = [
     {
-      id: "1",
+      id: 0,
       joined: true,
       members: members1,
       name: "Channel 1",
@@ -19,7 +36,7 @@ const channels = [
       type: "DIRECT",
     },
     {
-      id: "2",
+      id: 1,
       joined: true,
       members: [],
       name: "Channel 2",
@@ -27,14 +44,14 @@ const channels = [
       type: "PUBLIC",
     },
     {
-      id: "3",
+      id: 2,
       joined: true,
       name: "Channel 3",
       title: "Reputation Example",
       type: "OTHER",
     },
     {
-      id: "4",
+      id: 3,
       joined: false,
       name: "Channel 4",
       title: "Revoked Credential Example",
@@ -305,18 +322,11 @@ export function getMessages(selectedChannel) {
 //        channel: channel,
 //        body: pendingMessages[0].text,
 //      }
-export function sendMessage(newMessage) {
-    console.log("getting messages for channel",selectedChannel.channel.id);
-    const channelMsgs = channelsMessages[selectedChannel.channel.id];
-    channelMsgs.forEach(function (item, index) {
-      console.log("channel",selectedChannel.channel.name,"has message",index+".",item.id);
-    });
-
-    const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: channelMsgs}};
-        resolve(result);
-    });
-    return promise1;
+export async function sendMessage(newMessage) {
+    console.log("sending",newMessage.body,"to channel",newMessage.channel.id);
+    let msg = createMessage(uuid.v4(), newMessage.body, 'sentText', new Date().getTime(),users[0]);
+    channelsMessages[newMessage.channel.id].push(msg);
+    console.log("message sent",msg);
 }
 
 //     {

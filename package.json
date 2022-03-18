@@ -27,8 +27,13 @@
     "react-native-reanimated": "~2.3.1",
     "react-native-safe-area-context": "3.3.2",
     "react-native-screens": "~3.10.1",
+    "react-native-uuid": "^2.0.1",
     "react-native-vector-icons": "^9.1.0",
-    "react-native-web": "0.17.1"
+    "react-native-web": "0.17.1",
+    "realm": "^10.13.0",
+    "util": "^0.12.4",
+    "uuid4": "^2.0.2",
+    "uuidv4": "^6.2.12"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"
