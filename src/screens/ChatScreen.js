@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Bubble, ChatInput, GiftedChat, InputToolbar, SendButton } from 'react-native-gifted-chat';
+import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, SendButton } from 'react-native-gifted-chat';
 import { NativeModules, View } from 'react-native';
 
 import { getFakeUser, getMessages, rootsLogo, sendMessage, startChatSession } from '../roots';
@@ -24,14 +24,14 @@ export default function ChatScreen({ route }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const startChatSessionResult = startChatSession({
-      channel: channel,
-      onReceivedMessage: (message) => {
-        setMessages((currentMessages) =>
-            GiftedChat.append(currentMessages, [mapMessage(message)])
-        );
-      },
-    });
+//    const startChatSessionResult = startChatSession({
+//      channel: channel,
+//      onReceivedMessage: (message) => {
+//        setMessages((currentMessages) =>
+//            GiftedChat.append(currentMessages, [mapMessage(message)])
+//        );
+//      },
+//    });
 
     getMessages({
       channel: channel,
@@ -42,7 +42,7 @@ export default function ChatScreen({ route }) {
       setLoading(false);
     });
 
-    return startChatSessionResult.session.end;
+//    return startChatSessionResult.session.end;
   }, [user, channel]);
 
 //    //body: PrismModule.createDID(pendingMessages[0].text),
@@ -50,8 +50,14 @@ export default function ChatScreen({ route }) {
     await sendMessage({
       channel: channel,
       body: pendingMessages[0].text,
+      user: user,
     });
+    setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
   }
+
+  const onSend = (newMessages = []) => {
+
+  };
 
   function renderBubble(props) {
     return (
@@ -77,6 +83,7 @@ export default function ChatScreen({ route }) {
                     borderTopWidth: 1,
                     padding: 1,
                   }}
+                  textInputStyle={{ color: "white"}}
           />
       );
     }
@@ -125,6 +132,8 @@ export default function ChatScreen({ route }) {
           renderInputToolbar={renderInputToolbar}
           renderAllAvatars={true}
           renderAvatarOnTop={true}
+          renderUsernameOnMessage={true}
+          showAvatarForEveryMessage={true}
           user={mapUser(user)}
       />
     </View>

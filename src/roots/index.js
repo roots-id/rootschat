@@ -11,7 +11,7 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userJson) {
         id: idText,
         body: bodyText,
         type: statusText,
-        crreatedTime: timeInMillis,
+        createdTime: timeInMillis,
         user: userJson,
     }
 }
@@ -323,8 +323,8 @@ export function getMessages(selectedChannel) {
 //        body: pendingMessages[0].text,
 //      }
 export async function sendMessage(newMessage) {
-    console.log("sending",newMessage.body,"to channel",newMessage.channel.id);
-    let msg = createMessage(uuid.v4(), newMessage.body, 'sentText', new Date().getTime(),users[0]);
+    console.log(newMessage.user,"sending",newMessage.body,"to channel",newMessage.channel.id);
+    let msg = createMessage(uuid.v4(), newMessage.body, 'sentText', new Date().getTime(),users[1]);
     channelsMessages[newMessage.channel.id].push(msg);
     console.log("message sent",msg);
 }
