@@ -24,6 +24,7 @@ export default function ChatScreen({ route }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+
 //    const startChatSessionResult = startChatSession({
 //      channel: channel,
 //      onReceivedMessage: (message) => {
@@ -32,7 +33,6 @@ export default function ChatScreen({ route }) {
 //        );
 //      },
 //    });
-
     getMessages({
       channel: channel,
     })
@@ -41,7 +41,6 @@ export default function ChatScreen({ route }) {
 
       setLoading(false);
     });
-
 //    return startChatSessionResult.session.end;
   }, [user, channel]);
 

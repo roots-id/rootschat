@@ -1,11 +1,10 @@
 {
   "name": "chatkitty-tutorial",
   "version": "1.0.0",
-  "main": "node_modules/expo/AppEntry.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "eject": "expo eject"
   },
@@ -33,7 +32,8 @@
     "realm": "^10.13.0",
     "util": "^0.12.4",
     "uuid4": "^2.0.2",
-    "uuidv4": "^6.2.12"
+    "uuidv4": "^6.2.12",
+    "expo-splash-screen": "~0.14.1"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"

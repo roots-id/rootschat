@@ -18,13 +18,15 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rootswallet"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/LogoOnly1024.png",
         "backgroundColor": "#111111"
-      }
+      },
+      "package": "com.rootswallet"
     },
     "web": {
       "favicon": "./assets/LogoOnly1024.png"

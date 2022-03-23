@@ -1,10 +1,12 @@
 import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
-import { FlatList, SafeAreaView, StyleSheet, View, Text } from 'react-native';
+import { FlatList, NativeModules, SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import { Divider, List } from 'react-native-paper';
 
 import { getChannelDisplayName, getAllChannels } from '../roots';
 import Loading from '../components/Loading';
+
+const { PrismModule } = NativeModules;
 
 export default function HomeScreen({navigation}) {
   const [channels, setChannels] = useState([]);
@@ -23,7 +25,7 @@ export default function HomeScreen({navigation}) {
         }
       }
     });
-
+    console.log("Prism module",PrismModule.test())
     return () => {
       isCancelled = true;
     };
