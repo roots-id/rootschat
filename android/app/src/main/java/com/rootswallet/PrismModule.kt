@@ -1,15 +1,13 @@
 package com.rootswallet
-import android.content.Context
-import android.os.Build
+
+import android.annotation.SuppressLint
 import android.util.Log
-import android.widget.Toast
-import com.facebook.react.bridge.Callback
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
-import java.util.*
-
 import com.rootsid.wal.library.*
+import java.lang.reflect.Field
+import java.util.*
 
 class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -18,15 +16,18 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
     
     // Beware of the isBlocking. Need to fix with callback or alike
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun test(): String {
+    @ReactMethod(isBlockingSynchronousMethod = false)
+    fun test() {
         val wal = newWallet("walletname1", "", "password1")
         val didAlias1 = "didAlias1"
         val walAfterDid = newDid(wal, didAlias1, true)
-        return walAfterDid.toString()
+//        return walAfterDid.toString()
 //        var output:String
 //        try {
-//            output = publishDid(walAfterDid, didAlias1).toString()
+        val newenv = emptyMap<String,String>().toMutableMap()
+        newenv["PRISM_NODE_HOST"]="ppp-node-test.atalaprism.io";
+        Log.d("LANCETAG", setEnv(newenv).toString())
+        val output = publishDid(walAfterDid, didAlias1).toString()
 //        } catch (e: Exception) {
 //            e.printStackTrace()
 //            output = e.toString()
@@ -48,5 +49,39 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
 //           Pair(PrismDid.DEFAULT_ISSUING_KEY_ID, issuerIssuingKeyPair),
 //           Pair(PrismDid.DEFAULT_REVOCATION_KEY_ID, issuerRevocationKeyPair))
 //   }
+
+    @Throws(Exception::class)
+    fun setEnv(newenv: Map<String, String>?): MutableMap<String, String> {
+        var result: MutableMap<String, String> = mutableMapOf<String, String>()
+        try {
+            val processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment")
+            val theEnvironmentField: Field = processEnvironmentClass.getDeclaredField("theEnvironment")
+            theEnvironmentField.setAccessible(true)
+            val env = theEnvironmentField.get(null) as MutableMap<String, String>
+            env.putAll(newenv!!)
+            val theCaseInsensitiveEnvironmentField: Field =
+                processEnvironmentClass.getDeclaredField("theCaseInsensitiveEnvironment")
+            theCaseInsensitiveEnvironmentField.setAccessible(true)
+            val cienv = theCaseInsensitiveEnvironmentField.get(null) as MutableMap<String, String>
+            cienv.putAll(newenv)
+            result = cienv
+        } catch (e: NoSuchFieldException) {
+            val classes = Collections::class.java.declaredClasses
+            val env = System.getenv()
+            for (cl in classes) {
+                if ("java.util.Collections\$UnmodifiableMap" == cl.name) {
+                    val field: Field = cl.getDeclaredField("m")
+                    field.setAccessible(true)
+                    val obj: Any = field.get(env)
+                    val map = obj as MutableMap<String, String>
+                    map.clear()
+                    map.putAll(newenv!!)
+                    result = map
+                }
+            }
+        }
+
+        return result
+    }
 
 }

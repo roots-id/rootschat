@@ -2,6 +2,7 @@ import { useIsFocused } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { FlatList, NativeModules, SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import { Divider, List } from 'react-native-paper';
+import FormButton from '../components/FormButton';
 
 import { getChannelDisplayName, getAllChannels } from '../roots';
 import Loading from '../components/Loading';
@@ -25,7 +26,7 @@ export default function HomeScreen({navigation}) {
         }
       }
     });
-    console.log("Prism module",PrismModule.test())
+//    console.log("Prism module",PrismModule.test())
     return () => {
       isCancelled = true;
     };
@@ -35,41 +36,17 @@ export default function HomeScreen({navigation}) {
     return <Loading />;
   }
 
-//    const renderItem = ({ item }) => (
-//      <Item title={item.title} />
-//    );
-//    const DATA = [
-//      {
-//        id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
-//        title: 'First Item',
-//      },
-//      {
-//        id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
-//        title: 'Second Item',
-//      },
-//      {
-//        id: '58694a0f-3da1-471f-bd96-145571e29d72',
-//        title: 'Third Item',
-//      },
-//    ];
 
-//    const DATA1 = getAllChannels();
-//    const Item = ({ title }) => (
-//      <View style={styles.item}>
-//        <Text style={styles.title}>{title}</Text>
-//      </View>
-//    );
-
-//            <SafeAreaView style={styles.container}>
-//                    <FlatList
-//                      data={DATA}
-//                      renderItem={renderItem}
-//                      keyExtractor={item => item.id}
-//                    />
-//              </SafeAreaView>
-//<Text style={styles.title}>rock</Text>
   return (
     <View style={styles.container}>
+    <FormButton
+                title="test"
+                modeValue="contained"
+                onPress={async () => {
+                    const response = await PrismModule.test();
+                    console.log(response);
+                }}
+            />
         <SafeAreaView style={styles.container}>
               <FlatList
                   data={channels}
