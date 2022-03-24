@@ -1,21 +1,21 @@
 import uuid from 'react-native-uuid';
-
 import generateDID from '../prism'
+import { channels,channelsMessages,getDids,wallet } from '../db'
+import { NativeModules } from 'react-native'
 
-import { users,channels,channelsMessages } from '../db'
-
-export function getFakeUser() {
-    return users[1];
-}
-
-export function getRootsWalletBot() {
-    return users[0];
-}
+const PrismModule = NativeModules
+const ID_SEPARATOR = "_"
 
 //TODO log public DIDs and/or create Pairwise DIDs
-export function createChannel (channel) {
+export function createChannel (channelName) {
     const promise1 = new Promise((resolve, reject) => {
-        channels.push(channel)
+        let channelJson = {
+            id: PrismModule.newDID(wallet,channelName,false),
+            joined: true,
+            title: channelName,
+            type: "DIRECT",
+        };
+        channels.push(channelJson)
         resolve(channels);
     });
     return promise1;
@@ -71,11 +71,23 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userJson) {
 //        channel: channel,
 //        body: pendingMessages[0].text,
 //      }
-export async function sendMessage(newMessage) {
-    console.log(newMessage.user,"sending",newMessage.body,"to channel",newMessage.channel.id);
-    let msg = createMessage(uuid.v4(), newMessage.body, 'sentText', new Date().getTime(),users[1]);
-    channelsMessages[newMessage.channel.id].push(msg);
+export async function sendMessage(channel,messageText,userDisplay) {
+//TODO add sender to message
+    console.log(userDisplay.id,"sending",messageText,"to channel",channel);
+    let msgNum = channelsMessages[channel.id].length
+    let msgId = createMessageId(channel.id,userDisplay.id,msgNum);
+    let msgType = 'sentText'
+    let msgTime = new Date().getTime()
+    let msg = createMessage(msgId, messageText, msgType, msgTime, userDisplay);
+    channelsMessages[channel.id].push(msg);
     console.log("message sent",msg);
+}
+
+function createMessageId(channelId,user,msgNum) {
+    console.log("Generating msg id from",user,channelId,msgNum);
+    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(channelId)+ID_SEPARATOR+String(msgNum);
+    console.log("Generated msg id",msgId);
+    return msgId;
 }
 
 //     {

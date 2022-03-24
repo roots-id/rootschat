@@ -12,14 +12,7 @@ export default function CreateChannelScreen({ navigation }) {
 
   function handleButtonPress() {
     if (channelName.length > 0) {
-      let channelJson = {
-                          id: uuidv4(),
-                          joined: false,
-                          name: channelName,
-                          title: "Created Example",
-                          type: "DIRECT",
-                        };
-      createChannel(channelJson)
+      createChannel(channelName)
       .then(() => navigation.navigate('Examples'));
     }
   }

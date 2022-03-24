@@ -40,7 +40,7 @@ export default function HomeScreen({navigation}) {
   return (
     <View style={styles.container}>
     <FormButton
-                title="test"
+                title="test node connection"
                 modeValue="contained"
                 onPress={async () => {
                     const response = await PrismModule.test();

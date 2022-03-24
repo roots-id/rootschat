@@ -1,7 +1,76 @@
 import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
+//https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
+//https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280
+export const rootsLogo = rwLogo;
+export const personLogo = perLogo;
 
 export const currentTime = new Date().getTime();
+
+export const BLOCKCHAIN_URI_MSG_TYPE = "blockchainUri";
+
+const keyMaster0 =
+{
+    keyId: "master0",
+    didIdx: 0,
+    keyType: 0,
+    keyIdx: 0,
+    privateKey: "1dac8028572c5e6850a947afda078c89b65ac14f06ce942a29d7eed91cbc4adf",
+    publicKey: "04eec30982663533959864ab0bb12154e6e35e109235fad3e06dd17ee40447c62a9655f0ad759c509e9efce6b619c61e7691b79204e5d2b0229511e3f1bdd699fd",
+    revoked: false,
+}
+
+const keyIssuer0 =
+{
+    keyId: "issuing0",
+    didIdx: 0,
+    keyType: 1,
+    keyIdx: 0,
+    privateKey: "359a74d4b7a9d98af4ddb699d9790a12585ffa8d60cd5b11b21f5e2e312b45d7",
+    publicKey: "0458680397657378fe869bb0d04f155696c89ba1976a9f0e2a48ac717dc8d528f97b79d2fc935752c76e12de7a44c861f7bca8e9ec44ec7472d3f5d11923665e04",
+    revoked: false,
+}
+
+const keyRevocation0 =
+{
+    keyId: "revocation0",
+    didIdx: 0,
+    keyType: 4,
+    keyIdx: 0,
+    privateKey: "5d42245d47dab93b3c25730235c9c3bd05d9518975e207819fd9eed18bdae59e",
+    publicKey: "04b391614b8e46eda39b8106c70ccdadcd543cbdaf78eb4d7641e374ef48b959b4a2cf007e5403c6485708168d643a4322bd70bd081c3a665010e5c076a149d999",
+    revoked: false,
+}
+
+const did1 =
+{
+    alias: "didAlias1",
+    didIdx: 0,
+    uriCanonical: "did:prism:395f25c458441548db42ca4265036b6e73a524b79c685f7414bdecc668aaf9f2",
+    uriLongForm: "did:prism:395f25c458441548db42ca4265036b6e73a524b79c685f7414bdecc668aaf9f2:Cr8BCrwBEjsKB21hc3RlcjAQAUouCglzZWNwMjU2azESIQPuwwmCZjUzlZhkqwuxIVTm414QkjX60-Bt0X7kBEfGKhI8Cghpc3N1aW5nMBACSi4KCXNlY3AyNTZrMRIhAlhoA5dlc3j-hpuw0E8VVpbIm6GXap8OKkiscX3I1Sj5Ej8KC3Jldm9jYXRpb24wEAVKLgoJc2VjcDI1NmsxEiEDs5FhS45G7aObgQbHDM2tzVQ8va946012QeN070i5WbQ",
+    operationHash: "",
+    keyPairs: [
+        keyMaster0,
+        keyIssuer0,
+        keyRevocation0,
+    ]
+}
+
+const dids={}
+dids[did1.alias] = did1
+
+export function getDid(didAlias) {
+    return dids[didAlias]
+}
+
+export const prismTestWallet = {
+    _id: "walletname1",
+    mnemonic: "[cousin, then, airport, output, wheel, peanut, coach, nerve, shadow, axis, cloth, timber]",
+    passphrase: "password1",
+    dids: [did1],
+    importedCredentials: [],
+    issuedCredentials: []
+}
 
 //import Realm from "realm";
 
@@ -48,23 +117,18 @@ export const channels = [
     },
 ];
 
-//https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
-//https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280
-export const rootsLogo = rwLogo;
-export const personLogo = perLogo;
-
-export const users = [
-    {
-        id: "RootsWalletBot1",
-        displayName: "RootsWallet",
-        displayPictureUrl: rootsLogo,
-    },
-    {
-        id: "TestUser1",
-        displayName: "TestUser",
-        displayPictureUrl: personLogo,
-    },
-];
+export const rootsBotDisplay =
+{
+    id: "RootsWalletBot1",
+    displayName: "RootsWallet",
+    displayPictureUrl: rootsLogo,
+}
+export const userDisplay =
+{
+    id: "TestUser1",
+    displayName: "Test User",
+    displayPictureUrl: personLogo,
+}
 
 export const walCliCommands=[
 " ./wal.sh new-wallet holder_wallet -m poet,account,require,learn,misery,monitor,medal,great,blossom,steak,rain,crisp",
@@ -84,28 +148,28 @@ export const walCliCommands=[
 
 export const walCliMsgs = [
     {
-      body: "wallet created",
-      type: "status",
-          createdTime: currentTime+986,
-          user: users[0],
+        body: "wallet created",
+        type: "status",
+        createdTime: currentTime+986,
+        user: rootsBotDisplay,
     },
     {
-      body: "DID created",
-      type: "status",
-          createdTime: currentTime+987,
-          user: users[0],
+        body: "DID created",
+        type: "status",
+        createdTime: currentTime+987,
+        user: rootsBotDisplay,
     },
     {
-      body: "DID created",
-      type: "status",
-          createdTime: currentTime+988,
-          user: users[0],
+        body: "DID created",
+        type: "status",
+        createdTime: currentTime+988,
+        user: rootsBotDisplay,
     },
     {
-      body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=1f4f19f2016c4468777da24a5656b9b009550a601192960e22f1233af4e8b3ef",
-      type: "blockchainUri",
-          createdTime: currentTime+989,
-          user: users[0],
+        body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=1f4f19f2016c4468777da24a5656b9b009550a601192960e22f1233af4e8b3ef",
+        type: BLOCKCHAIN_URI_MSG_TYPE,
+        createdTime: currentTime+989,
+        user: rootsBotDisplay,
     },
     {
         body: JSON.stringify({alias: "holder_did",
@@ -126,32 +190,32 @@ export const walCliMsgs = [
             ]
         }),
         type: "jsonDid",
-            createdTime: currentTime+990,
-            user: users[0],
+        createdTime: currentTime+990,
+        user: rootsBotDisplay,
     },
     {
-      body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-      type: "blockchainUri",
-          createdTime: currentTime+991,
-          user: users[0],
+        body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+        type: BLOCKCHAIN_URI_MSG_TYPE,
+        createdTime: currentTime+991,
+        user: rootsBotDisplay,
     },
     {
-      body: "Credential issued",
-      type: "status",
-          createdTime: currentTime+992,
-          user: users[0],
+        body: "Credential issued",
+        type: "status",
+        createdTime: currentTime+992,
+        user: rootsBotDisplay,
     },
     {
-      body: "Valid credential.",
-      type: "status",
-          createdTime: currentTime+993,
-          user: users[0],
+        body: "Valid credential.",
+        type: "status",
+        createdTime: currentTime+993,
+        user: rootsBotDisplay,
     },
     {
-      body: "Credential exported",
-      type: "status",
-          createdTime: currentTime+994,
-          user: users[0],
+        body: "Credential exported",
+        type: "status",
+        createdTime: currentTime+994,
+        user: rootsBotDisplay,
     },
     {
       body: JSON.stringify({
@@ -165,37 +229,37 @@ export const walCliMsgs = [
              }),
       type: "jsonCredential",
           createdTime: currentTime+995,
-          user: users[0],
+          user: rootsBotDisplay,
     },
     {
       body: "Credential imported",
       type: "status",
           createdTime: currentTime+996,
-          user: users[0],
+          user: rootsBotDisplay,
     },
     {
       body: "Valid credential.",
       type: "status",
           createdTime: currentTime+997,
-          user: users[0],
+          user: rootsBotDisplay,
     },
     {
       body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-      type: "blockchainUri",
+      type: BLOCKCHAIN_URI_MSG_TYPE,
           createdTime: currentTime+998,
-          user: users[0],
+          user: rootsBotDisplay,
     },
     {
       body: "Credential revoked",
       type: "status",
           createdTime: currentTime+999,
-          user: users[0],
+          user: rootsBotDisplay,
     },
     {
       body: "Invalid credential.",
       type: "status",
     createdTime: currentTime+1000,
-    user: users[0],
+    user: rootsBotDisplay,
     }
 ]
 
@@ -213,7 +277,7 @@ export const achievementMsgs = [
       body: achievementIntroMsg+"Opened RootsWallet!",
       type: "text",
       createdTime: currentTime,
-      user: users[0],
+      user: rootsBotDisplay,
     },
 
     {
@@ -221,21 +285,21 @@ export const achievementMsgs = [
       body: "{subject: you,issuer: RootsWallet,credential: Opened RootsWallet}",
       type: "jsonCredential",
       createdTime: currentTime+1000,
-      user: users[0],
+      user: rootsBotDisplay,
     },
     {
       id: "message3",
       body: achievementIntroMsg+"Clicked Example!",
       type: "text",
       createdTime: currentTime+2000,
-      user: users[0],
+      user: rootsBotDisplay,
     },
     {
       id: "message4",
       body: "{subject: you,issuer: RootsWallet,credential: Clicked Example}",
       type: "jsonCredential",
       createdTime: currentTime+3000,
-      user: users[0],
+      user: rootsBotDisplay,
     },
 ];
 export const comingSoonMsgs = [
@@ -244,7 +308,7 @@ export const comingSoonMsgs = [
       body: "Coming Soon....",
       type: "text",
       createdTime: currentTime,
-      user: users[0],
+      user: rootsBotDisplay,
     },
 ];
 
