@@ -11,12 +11,16 @@ import java.util.*
 
 class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
+    var wal:Wallet = newWallet("wallet1","","passphrase")
+
     override fun getName(): String {
         return "PrismModule"
     }
 
-    fun newDID(wal: Wallet, didAlias: String, addIssuer: Boolean) {
-        val walAfterDid = newDid(wal, didAlias, true)
+    @ReactMethod(isBlockingSynchronousMethod = false)
+    fun newDID(didAlias: String) {
+        val output = newDid(wal, didAlias, true).toString();
+        //return "created did " + wal.dids.last()
     }
 
     // Beware of the isBlocking. Need to fix with callback or alike

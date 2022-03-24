@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { NativeModules, StyleSheet, View } from 'react-native';
 import { IconButton, Title } from 'react-native-paper';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,13 +7,15 @@ import { createChannel } from '../roots';
 import FormButton from '../components/FormButton';
 import FormInput from '../components/FormInput';
 
+const { PrismModule } = NativeModules;
+
 export default function CreateChannelScreen({ navigation }) {
   const [channelName, setChannelName] = useState('');
 
   function handleButtonPress() {
     if (channelName.length > 0) {
-      createChannel(channelName)
-      .then(() => navigation.navigate('Examples'));
+      PrismModule.newDID(channelName)
+      navigation.navigate('Examples')
     }
   }
 

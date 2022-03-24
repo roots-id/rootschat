@@ -10,7 +10,7 @@ const ID_SEPARATOR = "_"
 export function createChannel (channelName) {
     const promise1 = new Promise((resolve, reject) => {
         let channelJson = {
-            id: PrismModule.newDID(wallet,channelName,false),
+            id: PrismModule.newDID(channelName,false),
             joined: true,
             title: channelName,
             type: "DIRECT",
