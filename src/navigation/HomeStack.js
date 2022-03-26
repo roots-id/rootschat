@@ -18,7 +18,7 @@ export default function HomeStack() {
   return (
       <ModalStack.Navigator presentation="modal" headerShown="false">
         <ModalStack.Screen name="RootsWallet - Chat Prototype" component={ChatComponent} />
-        <ModalStack.Screen name="Create Example" component={CreateChannelScreen} />
+        <ModalStack.Screen name="Create Secure Channel" component={CreateChannelScreen} />
       </ModalStack.Navigator>
   );
 }
@@ -37,7 +37,7 @@ function ChatComponent() {
           }}
       >
         <ChatStack.Screen
-                    name="Examples"
+                    name="Secure Channels"
                     component={HomeScreen}
                     options={({ navigation }) => ({
                       headerRight: () => (
@@ -45,13 +45,13 @@ function ChatComponent() {
                               icon="plus"
                               size={28}
                               color="#eeeeee"
-                              onPress={() => navigation.navigate('Create Example')}
+                              onPress={() => navigation.navigate('Create Secure Channel')}
                           />
                       ),
                     })}
                 />
         <ChatStack.Screen
-                    name="Messages"
+                    name="Secure Messages"
                     component={ChatScreen}
                     options={({ route }) => ({
                       title: route.params.channel.title,

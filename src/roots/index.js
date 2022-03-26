@@ -1,30 +1,34 @@
 import uuid from 'react-native-uuid';
-import generateDID from '../prism'
-import { channels,channelsMessages,getDids,wallet } from '../db'
-import { NativeModules } from 'react-native'
+import { addChannel,channels,channelsMessages,getDids,getWallet } from '../db'
+import PrismModule from '../prism'
 
-const PrismModule = NativeModules
 const ID_SEPARATOR = "_"
+
+let wallet = getWallet()
 
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channelName) {
-    const promise1 = new Promise((resolve, reject) => {
-        let channelJson = {
-            id: PrismModule.newDID(channelName,false),
-            joined: true,
-            title: channelName,
-            type: "DIRECT",
-        };
-        channels.push(channelJson)
-        resolve(channels);
-    });
-    return promise1;
+    if(!wallet){
+        //TODO implement wallet creation method
+        console.log('Created wallet',wallet)
+    }
+    wallet = JSON.parse(PrismModule.newDID(JSON.stringify(wallet),channelName))
+    const newDid = wallet["dids"][wallet["dids"].length-1];
+    console.log('Created new channel',newDid["alias"],'for wallet',wallet)
+    let channelJson = {
+        id: newDid["alias"],
+        joined: true,
+        title: "(You Created) " + newDid["alias"],
+        type: "DIRECT",
+    };
+    addChannel(channelJson)
+    return channelJson
 }
 
 //TODO iterate to verify DID connections if cache is expired
 export function getAllChannels () {
     channels.forEach(function (item, index) {
-      console.log("getting channels",index+".",item.name);
+      console.log("getting channels",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
@@ -47,7 +51,7 @@ export function getMessages(selectedChannel) {
     console.log("getting messages for channel",selectedChannel.channel.id);
     const channelMsgs = channelsMessages[selectedChannel.channel.id];
     channelMsgs.forEach(function (item, index) {
-      console.log("channel",selectedChannel.channel.name,"has message",index+".",item.id);
+      console.log("channel",selectedChannel.channel.title,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {

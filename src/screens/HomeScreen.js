@@ -7,7 +7,7 @@ import FormButton from '../components/FormButton';
 import { getChannelDisplayName, getAllChannels } from '../roots';
 import Loading from '../components/Loading';
 
-const { PrismModule } = NativeModules;
+const PrismModule = NativeModules
 
 export default function HomeScreen({navigation}) {
   const [channels, setChannels] = useState([]);
@@ -36,17 +36,13 @@ export default function HomeScreen({navigation}) {
     return <Loading />;
   }
 
-
+//    <FormButton
+//                title="test node connection"
+//                modeValue="contained"
+//                onPress={PrismModule.testNode()}
+//            />
   return (
     <View style={styles.container}>
-    <FormButton
-                title="test node connection"
-                modeValue="contained"
-                onPress={async () => {
-                    const response = await PrismModule.test();
-                    console.log(response);
-                }}
-            />
         <SafeAreaView style={styles.container}>
               <FlatList
                   data={channels}
@@ -59,7 +55,7 @@ export default function HomeScreen({navigation}) {
                           titleStyle={styles.listTitle}
                           descriptionStyle={styles.listDescription}
                           descriptionNumberOfLines={1}
-                          onPress={() => navigation.navigate('Messages', { channel: item })}
+                          onPress={() => navigation.navigate('Secure Messages', { channel: item })}
                       />
                   )}
               />

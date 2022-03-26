@@ -1,9 +1,11 @@
 import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
+import apLogo from '../assets/ATALAPRISM.jpeg'
 //https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
 //https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280
 export const rootsLogo = rwLogo;
 export const personLogo = perLogo;
+export const prismLogo = apLogo;
 
 export const currentTime = new Date().getTime();
 
@@ -63,59 +65,17 @@ export function getDid(didAlias) {
     return dids[didAlias]
 }
 
-export const prismTestWallet = {
+const testWallet = {
     _id: "walletname1",
-    mnemonic: "[cousin, then, airport, output, wheel, peanut, coach, nerve, shadow, axis, cloth, timber]",
+    mnemonic: ["cousin", "then", "airport", "output", "wheel", "peanut", "coach", "nerve", "shadow", "axis", "cloth", "timber"],
     passphrase: "password1",
     dids: [did1],
     importedCredentials: [],
     issuedCredentials: []
 }
-
-//import Realm from "realm";
-
-export const members1 = [
-    {
-      displayName: "jim",
-    },
-]
-
-//const DIDs = [
-//createDID("testDid1",1), createDID("testDid2",2), createDID("testDid3",3), createDID("testDid4",4)
-//]
-
-export const channels = [
-    {
-      id: 0,
-      joined: true,
-      members: members1,
-      name: "Channel 1",
-      title: "Achievements Example",
-      type: "DIRECT",
-    },
-    {
-      id: 1,
-      joined: true,
-      members: [],
-      name: "Channel 2",
-      title: "Bartender Example",
-      type: "PUBLIC",
-    },
-    {
-      id: 2,
-      joined: true,
-      name: "Channel 3",
-      title: "Reputation Example",
-      type: "OTHER",
-    },
-    {
-      id: 3,
-      joined: false,
-      name: "Channel 4",
-      title: "Revoked Credential Example",
-      type: "DIRECT",
-    },
-];
+export function getWallet() {
+    return testWallet
+}
 
 export const rootsBotDisplay =
 {
@@ -123,11 +83,63 @@ export const rootsBotDisplay =
     displayName: "RootsWallet",
     displayPictureUrl: rootsLogo,
 }
+export const prismBotDisplay =
+{
+    id: "PrismBot1",
+    displayName: "Atala Prism",
+    displayPictureUrl: prismLogo,
+}
+export const bartenderBotDisplay =
+{
+    id: "BartenderBot1",
+    displayName: "Bartender",
+    displayPictureUrl: personLogo,
+}
 export const userDisplay =
 {
-    id: "TestUser1",
+    id: did1.alias,
     displayName: "Test User",
     displayPictureUrl: personLogo,
+}
+
+export const channels = [
+    {
+      id: "achievementSecureChannel",
+      joined: true,
+      members: [rootsBotDisplay.id,userDisplay.id],
+      title: "(Faked) Achievements Secure Channel",
+      type: "DIRECT",
+    },
+    {
+      id: "exampleBartenderSecureChannel",
+      joined: true,
+      members: [userDisplay.id,bartenderBotDisplay.id],
+      title: "(Coming Soon) Example Bartender Secure Channel",
+      type: "PUBLIC",
+    },
+    {
+      id: "exampleRevokedCredentialChannel",
+      joined: true,
+      members: [rootsBotDisplay.id,userDisplay.id],
+      title: "(Faked) Example Credential Revocation Channel",
+      type: "DIRECT",
+    },
+];
+
+//    {
+//      id: 2,
+//      joined: true,
+//      title: "Reputation Example",
+//      type: "OTHER",
+//    },
+
+export function addChannel(channelJson) {
+    if(!channels.includes(channelJson.id)) {
+        channels.push(channelJson)
+        channelsMessages[channelJson.id] = comingSoonMsgs;
+    } else {
+        console.log("Channel",channelJson.id,"already exists.  Not creating")
+    }
 }
 
 export const walCliCommands=[
@@ -169,7 +181,7 @@ export const walCliMsgs = [
         body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=1f4f19f2016c4468777da24a5656b9b009550a601192960e22f1233af4e8b3ef",
         type: BLOCKCHAIN_URI_MSG_TYPE,
         createdTime: currentTime+989,
-        user: rootsBotDisplay,
+        user: prismBotDisplay,
     },
     {
         body: JSON.stringify({alias: "holder_did",
@@ -191,13 +203,13 @@ export const walCliMsgs = [
         }),
         type: "jsonDid",
         createdTime: currentTime+990,
-        user: rootsBotDisplay,
+        user: prismBotDisplay,
     },
     {
         body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
         type: BLOCKCHAIN_URI_MSG_TYPE,
         createdTime: currentTime+991,
-        user: rootsBotDisplay,
+        user: prismBotDisplay,
     },
     {
         body: "Credential issued",
@@ -229,7 +241,7 @@ export const walCliMsgs = [
              }),
       type: "jsonCredential",
           createdTime: currentTime+995,
-          user: rootsBotDisplay,
+          user: prismBotDisplay,
     },
     {
       body: "Credential imported",
@@ -247,7 +259,7 @@ export const walCliMsgs = [
       body: "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
       type: BLOCKCHAIN_URI_MSG_TYPE,
           createdTime: currentTime+998,
-          user: rootsBotDisplay,
+          user: prismBotDisplay,
     },
     {
       body: "Credential revoked",
@@ -305,7 +317,7 @@ export const achievementMsgs = [
 export const comingSoonMsgs = [
     {
       id: "message1",
-      body: "Coming Soon....",
+      body: "Welcome to your new secure channel!",
       type: "text",
       createdTime: currentTime,
       user: rootsBotDisplay,
@@ -314,6 +326,5 @@ export const comingSoonMsgs = [
 
 export const channelsMessages = []
 channelsMessages[channels[0].id] = achievementMsgs;
+channelsMessages[channels[2].id] = walCommandsMsgs;
 channelsMessages[channels[1].id] = comingSoonMsgs;
-channelsMessages[channels[2].id] = comingSoonMsgs;
-channelsMessages[channels[3].id] = walCommandsMsgs;

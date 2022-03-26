@@ -14,8 +14,9 @@ export default function CreateChannelScreen({ navigation }) {
 
   function handleButtonPress() {
     if (channelName.length > 0) {
-      PrismModule.newDID(channelName)
-      navigation.navigate('Examples')
+      let channelJson = createChannel(channelName)
+      console.log("Created channel",channelJson)
+      navigation.navigate('Secure Channels')
     }
   }
 
