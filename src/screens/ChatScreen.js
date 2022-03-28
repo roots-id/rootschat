@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
 import { NativeModules, View } from 'react-native';
-
-import { BLOCKCHAIN_URI_MSG_TYPE, getAllMessages, getUser, sendMessage, startChatSession } from '../roots';
+import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getUser, PROMPT_PUBLISH_MSG_TYPE,
+    sendMessage, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
@@ -41,10 +41,10 @@ export default function ChatScreen({ route }) {
   }, [channel]);
 
 //    //body: PrismModule.createDID(pendingMessages[0].text),
-  async function handleSend(pendingMessages) {
-    await sendMessage(channel, pendingMessages[0].text);
-    setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
-  }
+    async function handleSend(pendingMessages) {
+        await sendMessage(channel, pendingMessages[0].text, TEXT_MSG_TYPE, getUser(channel.id));
+        setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
+    }
 
   const onSend = (newMessages = []) => {
 
@@ -58,6 +58,7 @@ export default function ChatScreen({ route }) {
               left: {
                 backgroundColor: '#fad58b',
                 color: '#222222',
+                fontWeight: 'bold',
               },
             }}
         />
@@ -102,8 +103,10 @@ export default function ChatScreen({ route }) {
                   left: {
                     backgroundColor: '#4fcc96',
                     color: '#222222',
+                    fontWeight: 'bold',
                   },
                 }}
+                textStyle={{ color: "white"}}
             />
         );
   }
@@ -128,10 +131,10 @@ export default function ChatScreen({ route }) {
     <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
       <GiftedChat
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
-          onSend={handleSend}
-          renderBubble={renderBubble}
+          onSend={messages => handleSend(messages)}
+          renderBubble={props => renderBubble(props)}
           renderSystemMessage={renderSystemMessage}
-          renderInputToolbar={renderInputToolbar}
+          renderInputToolbar={props => renderInputToolbar(props)}
           renderAllAvatars={true}
           renderAvatarOnTop={true}
           renderUsernameOnMessage={true}

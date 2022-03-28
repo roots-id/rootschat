@@ -1,6 +1,6 @@
 import uuid from 'react-native-uuid';
 import { addChannel,addMessage,createUserDisplay,DID_ALIAS,getChannels,getDids,
-    getMessages,getUserDisplay,getWallet,newChannel,WALLET_DIDS } from '../db'
+    getMessages,getUserDisplay,getWallet,newChannel,saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
 import rwLogo from '../assets/LogoOnly1024.png'
@@ -13,6 +13,7 @@ export const personLogo = perLogo;
 export const prismLogo = apLogo;
 
 export const BLOCKCHAIN_URI_MSG_TYPE = "blockchainUri";
+export const PROMPT_PUBLISH_MSG_TYPE = "promptPublish";
 export const STATUS_MSG_TYPE = "status";
 export const CREDENTIAL_JSON_MSG_TYPE = "jsonCredential";
 export const TEXT_MSG_TYPE = "text"
@@ -31,6 +32,7 @@ export const currentTime = new Date().getTime();
 
 export function createWallet(walletName,mnemonic,passphrase) {
     wallet = JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase))
+    saveWallet(wallet);
     console.log('Wallet created',wallet)
 }
 
@@ -41,7 +43,8 @@ export function createChannel (channelName,titlePrefix) {
     const newDid = wallet[WALLET_DIDS][wallet[WALLET_DIDS].length-1];
     createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
     let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
-    sendMessage(newCh,"Welcome to the "+newDid[DID_ALIAS],TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+    sendMessage(newCh,"Welcome to the "+newDid[DID_ALIAS],TEXT_MSG_TYPE+" :)",getUserDisplay(ROOTS_BOT))
+    sendMessage(newCh,"DID Created", PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
     return newCh
 }
 
@@ -65,18 +68,17 @@ function initDemoUserDisplays() {
 
 function initializeDemo() {
     initDemoUserDisplays()
+    initDemoIntro()
 
-    let revokeCh = createChannel("Revoked Credential Channel","Demo - ")
     let achieveCh = createChannel("Achievement Channel","Under Construction - ")
     let bartendCh = createChannel("Bartender Channel","Coming Soon - ")
 
-    initDemoRevokedCredentialMsgs(revokeCh)
     initDemoAchievementMsgs(achieveCh)
 }
 
-function initDemoRevokedCredentialMsgs(channel) {
-    sendMessage(channel,"Wallet Created", STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"DID Created", STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+function initDemoIntro() {
+    const channel = createChannel("Introduction Channel","Under Construction - ")
+
     sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=1f4f19f2016c4468777da24a5656b9b009550a601192960e22f1233af4e8b3ef",
                   BLOCKCHAIN_URI_MSG_TYPE,
                   getUserDisplay(PRISM_BOT))
