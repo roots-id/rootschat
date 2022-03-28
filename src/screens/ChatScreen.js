@@ -2,8 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
 import { NativeModules, View } from 'react-native';
 
-import { getMessages, sendMessage, startChatSession } from '../roots';
-import { BLOCKCHAIN_URI_MSG_TYPE, userDisplay } from '../db'
+import { BLOCKCHAIN_URI_MSG_TYPE, getAllMessages, getUser, sendMessage, startChatSession } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
@@ -20,7 +19,6 @@ export default function ChatScreen({ route }) {
 //                      }
 //  const [ user, setUser ] = useState(user);
   const { channel } = route.params;
-
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,12 +32,9 @@ export default function ChatScreen({ route }) {
 //        );
 //      },
 //    });
-    getMessages({
-      channel: channel,
-    })
+    getAllMessages(channel)
     .then((result) => {
       setMessages(result.paginator.items.map(mapMessage));
-
       setLoading(false);
     });
 //    return startChatSessionResult.session.end;
@@ -47,7 +42,7 @@ export default function ChatScreen({ route }) {
 
 //    //body: PrismModule.createDID(pendingMessages[0].text),
   async function handleSend(pendingMessages) {
-    await sendMessage(channel, pendingMessages[0].text,userDisplay);
+    await sendMessage(channel, pendingMessages[0].text);
     setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
   }
 
@@ -141,7 +136,7 @@ export default function ChatScreen({ route }) {
           renderAvatarOnTop={true}
           renderUsernameOnMessage={true}
           showAvatarForEveryMessage={true}
-          user={mapUser(userDisplay)}
+          user={mapUser(getUser(channel.id))}
       />
     </View>
   );

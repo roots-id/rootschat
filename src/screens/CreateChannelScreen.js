@@ -14,7 +14,7 @@ export default function CreateChannelScreen({ navigation }) {
 
   function handleButtonPress() {
     if (channelName.length > 0) {
-      let channelJson = createChannel(channelName)
+      let channelJson = createChannel(channelName,"User Created - ")
       console.log("Created channel",channelJson)
       navigation.navigate('Secure Channels')
     }
@@ -33,7 +33,7 @@ export default function CreateChannelScreen({ navigation }) {
         <View style={styles.innerContainer}>
           <Title style={styles.title}>Create a new channel</Title>
           <FormInput
-              labelName="Example"
+              labelName="Enter Channel Name"
               value={channelName}
               onChangeText={(text) => setChannelName(text)}
               clearButtonMode="while-editing"

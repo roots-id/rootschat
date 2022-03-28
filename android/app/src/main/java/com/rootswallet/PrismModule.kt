@@ -38,6 +38,12 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         return Json.encodeToString(cliWal)
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun newWal(name: String, mnemonic: String, passphrase: String): String {
+        val cliWal = newWallet(name,mnemonic,passphrase);
+        return Json.encodeToString<Wallet>(cliWal);
+    }
+
     // Beware of the isBlocking. Need to fix with callback or alike
     @ReactMethod(isBlockingSynchronousMethod = false)
     fun publishDid(wal: Wallet, didAlias: String) {
