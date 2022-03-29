@@ -5,7 +5,7 @@ import PrismModule from '../prism'
 
 import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
-import apLogo from '../assets/ATALAPRISM.jpeg'
+import apLogo from '../assets/ATALAPRISM.png'
 //https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
 //https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280
 export const rootsLogo = rwLogo;
@@ -26,7 +26,7 @@ const ROOTS_BOT = "RootsWalletBot1"
 const PRISM_BOT = "PrismBot1"
 const BARTENDER_BOT = "BartenderBot1"
 
-let wallet = getWallet();
+let wallet
 const demo = true
 export const currentTime = new Date().getTime();
 
@@ -38,13 +38,19 @@ export function createWallet(walletName,mnemonic,passphrase) {
 
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channelName,titlePrefix) {
+    if(!wallet) {
+        wallet = createWallet("testWallet","","testPassphrase");
+    }
     console.log("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
-    wallet = JSON.parse(PrismModule.newDID(JSON.stringify(wallet),channelName))
+    const walJson = JSON.stringify(wallet)
+    console.log("wallet json being passed",walJson)
+    wallet = JSON.parse(PrismModule.newDID(walJson,channelName))
     const newDid = wallet[WALLET_DIDS][wallet[WALLET_DIDS].length-1];
     createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
     let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
-    sendMessage(newCh,"Welcome to the "+newDid[DID_ALIAS],TEXT_MSG_TYPE+" :)",getUserDisplay(ROOTS_BOT))
-    sendMessage(newCh,"DID Created", PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
+    sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+    sendMessage(newCh,"Would you like to publish this channel to Prism",
+        PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
     return newCh
 }
 
@@ -69,11 +75,8 @@ function initDemoUserDisplays() {
 function initializeDemo() {
     initDemoUserDisplays()
     initDemoIntro()
-
-    let achieveCh = createChannel("Achievement Channel","Under Construction - ")
-    let bartendCh = createChannel("Bartender Channel","Coming Soon - ")
-
-    initDemoAchievementMsgs(achieveCh)
+    initDemoAchievements()
+    initDemoBartender()
 }
 
 function initDemoIntro() {
@@ -141,19 +144,25 @@ function initDemoIntro() {
                 getUserDisplay(ROOTS_BOT))
 }
 
-function initDemoAchievementMsgs(channel) {
-    sendMessage(channel,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
+function initDemoAchievements() {
+    const achieveCh = createChannel("Achievement Channel","Under Construction - ")
+
+    sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
       STATUS_MSG_TYPE,
       getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"{subject: you,issuer: RootsWallet,credential: Opened RootsWallet}",
+    sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Opened RootsWallet}",
       CREDENTIAL_JSON_MSG_TYPE,
       getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,ACHIEVEMENT_MSG_PREFIX+"Clicked Example!",
+    sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Clicked Example!",
       STATUS_MSG_TYPE,
       getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"{subject: you,issuer: RootsWallet,credential: Clicked Example}",
+    sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Clicked Example}",
       CREDENTIAL_JSON_MSG_TYPE,
       getUserDisplay(ROOTS_BOT))
+}
+
+function initDemoBartender() {
+    const bartendCh = createChannel("Bartender Channel","Coming Soon - ")
 }
 
 export const walCliCommands=[
@@ -236,14 +245,40 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson) 
 //        body: pendingMessages[0].text,
 //      }
 export async function sendMessage(channel,msgText,msgType,userDisplay) {
-    await new Promise(r => setTimeout(r, 1000));
     console.log("user",userDisplay,"sending",msgText,"to channel",channel);
     let msgNum = getMessages(channel.id).length
     let msgId = createMessageId(channel.id,userDisplay.id,msgNum);
-    let msgTime = new Date().getTime()
+    let msgTime = new Date().getTime() + (msgNum%100)
     let msg = createMessage(msgId, msgText, msgType, msgTime, userDisplay);
+    msg = addMessageExtensions(msg);
     addMessage(channel.id,msg);
-    console.log("message sent",msg);
+    //console.log("message sent",msg);
+}
+
+function addMessageExtensions(msg) {
+    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
+        msg = addQuickReply(msg)
+    }
+    return msg
+}
+
+function addQuickReply(msg) {
+    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
+        msg["quickReplies"] = {type: 'checkbox',keepIt: true,
+            values: [{title: 'Yes',value: PROMPT_PUBLISH_MSG_TYPE,},{title: 'No',value: 'no',}],
+        }
+    }
+    return msg
+}
+
+export function processQuickReply(channel,reply) {
+    console.log("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
+    if(reply && channel) {
+        if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
+            console.log("Publishing DID",channel.id,"to PRISM")
+            PrismModule.publishDid(JSON.stringify(wallet), channel.id);
+        }
+    }
 }
 
 function createMessageId(channelId,user,msgNum) {

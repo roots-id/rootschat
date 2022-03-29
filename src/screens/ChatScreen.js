@@ -1,8 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
-import { NativeModules, View } from 'react-native';
-import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getUser, PROMPT_PUBLISH_MSG_TYPE,
-    sendMessage, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
+import { KeyboardAvoidingView, NativeModules, StyleSheet, View } from 'react-native';
+import { Video, VideoPlayer } from 'react-native-video'
+
+import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getUser, processQuickReply,
+    PROMPT_PUBLISH_MSG_TYPE, sendMessage, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
@@ -46,24 +48,66 @@ export default function ChatScreen({ route }) {
         setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
     }
 
-  const onSend = (newMessages = []) => {
+    async function handleQuickReply(reply) {
+        await processQuickReply(channel, reply);
+        //setMessages((prevMessages) => GiftedChat.append(prevMessages, ));
+    }
 
-  };
-
+//#fad58b
   function renderBubble(props) {
     return (
         <Bubble
             {...props}
             wrapperStyle={{
-              left: {
-                backgroundColor: '#fad58b',
-                color: '#222222',
-                fontWeight: 'bold',
-              },
+                  left: {
+                    backgroundColor: '#222222',
+                  },
+                }}
+            textProps={{
+                style: {
+                  color: props.position === 'left' ? '#fff' : '#000',
+                },
+            }}
+            textStyle={{
+                left: {
+                  color: '#fff',
+                },
+                right: {
+                  color: '#000',
+                },
             }}
         />
     );
   }
+
+    function getSource(message) {
+        if (message && message.currentMessage) {
+          return message.currentMessage.audio ? message.currentMessage.audio : message.currentMessage.video ? message.currentMessage.video : null;
+        }
+        return null;
+    }
+
+    function renderVideo(message) {
+      const source = getSource(message);
+      if (source) {
+        return (
+          <View style={styles.videoContainer} key={message.currentMessage._id}>
+            {Platform.OS === 'ios' ? <Video
+              style={styles.videoElement}
+              shouldPlay
+              height={156}
+              width={242}
+              muted={true}
+              source={{ uri: source }}
+              allowsExternalPlayback={false}></Video> : <VideoPlayer
+              style={styles.videoElement}
+              source={{ uri: source }}
+            />}
+          </View>
+        );
+      }
+      return <></>;
+    };
 
     function renderInputToolbar(props) {
       return (
@@ -80,36 +124,37 @@ export default function ChatScreen({ route }) {
       );
     }
 
-  function renderSystemMessage(props) {
-    const {
-      currentMessage: { text: currText },
-    } = props
+//  function renderSystemMessage(props) {
+//    const {
+//      currentMessage: { text: currText },
+//    } = props
+//
+//    let messageTextStyle
+//
+//    // Make "pure emoji" messages much bigger than plain text.
+//    if (currText && emojiUtils.isPureEmojiString(currText)) {
+//      messageTextStyle = {
+//        fontSize: 28,
+//        // Emoji get clipped if lineHeight isn't increased; make it consistent across platforms.
+//        lineHeight: Platform.OS === 'android' ? 34 : 30,
+//      }
+//    }
 
-    let messageTextStyle
-
-    // Make "pure emoji" messages much bigger than plain text.
-    if (currText && emojiUtils.isPureEmojiString(currText)) {
-      messageTextStyle = {
-        fontSize: 28,
-        // Emoji get clipped if lineHeight isn't increased; make it consistent across platforms.
-        lineHeight: Platform.OS === 'android' ? 34 : 30,
-      }
-    }
-
-    return (
-            <Bubble
-                {...props}
-                wrapperStyle={{
-                  left: {
-                    backgroundColor: '#4fcc96',
-                    color: '#222222',
-                    fontWeight: 'bold',
-                  },
-                }}
-                textStyle={{ color: "white"}}
-            />
-        );
-  }
+//#4fcc96
+//    return (
+//            <Bubble
+//                {...props}
+//                wrapperStyle={{
+//                  left: {
+//                    backgroundColor: '#4fcc96',
+//                    color: '#222222',
+//                    fontWeight: 'bold',
+//                  },
+//                }}
+//                textStyle={{ color: "white"}}
+//            />
+//        );
+//  }
 
 //  function renderMessageImage(props) {
 //    console.log("Rendering message image",props);
@@ -126,14 +171,15 @@ export default function ChatScreen({ route }) {
     return <Loading />;
   }
 
-
+//renderSystemMessage={renderSystemMessage}
+//renderMessageVideo={renderVideo}
   return (
     <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
       <GiftedChat
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
+          onQuickReply={reply => handleQuickReply(reply)}
           onSend={messages => handleSend(messages)}
           renderBubble={props => renderBubble(props)}
-          renderSystemMessage={renderSystemMessage}
           renderInputToolbar={props => renderInputToolbar(props)}
           renderAllAvatars={true}
           renderAvatarOnTop={true}
@@ -141,19 +187,36 @@ export default function ChatScreen({ route }) {
           showAvatarForEveryMessage={true}
           user={mapUser(getUser(channel.id))}
       />
+      {
+        Platform.OS === 'android' && <KeyboardAvoidingView behavior="padding" />
+      }
     </View>
   );
 }
 
+//,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
 function mapMessage(message) {
   //console.log("Map message for gifted",message);
-  return {
-    _id: message.id,
-    text: message.body,
-    createdAt: new Date(message.createdTime),
-    user: mapUser(message.user),
-    ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true},
-  };
+  mappedMsg={}
+  mappedMsg["_id"] = message.id
+  mappedMsg["text"] = message.body
+  mappedMsg["createdAt"] = new Date(message.createdTime)
+  mappedMsg["user"] = mapUser(message.user)
+  if(message["quickReplies"]) {
+      mappedMsg["quickReplies"] = message["quickReplies"]
+  }
+  mappedMsg["type"] = message.type
+    //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
+    // You can also add a video prop:
+    //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+    // Mark the message as sent, using one tick
+    //sent: true,
+    // Mark the message as received, using two tick
+    //received: true,
+    // Mark the message as pending with a clock loader
+    //pending: true,
+    // Any additional custom parameters are passed through
+  return mappedMsg;
 }
 
 function mapUser(user) {
@@ -164,3 +227,17 @@ function mapUser(user) {
     avatar: user.displayPictureUrl,
   };
 }
+
+const styles = StyleSheet.create({
+  videoContainer: {
+    marginTop: 50,
+  },
+  bigBlue: {
+    color: 'blue',
+    fontWeight: 'bold',
+    fontSize: 30,
+  },
+  red: {
+    color: 'red',
+  },
+});

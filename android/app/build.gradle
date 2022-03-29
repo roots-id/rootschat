@@ -1,5 +1,6 @@
 apply plugin: "com.android.application"
 apply plugin: "kotlin-android"
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 
 import com.android.build.OutputFile
 
@@ -239,7 +240,7 @@ dependencies {
         implementation jscFlavor
     }
 
-    implementation("com.rootsid.wal:wal-library:1.0.1-LANCE") {
+    implementation("com.rootsid.wal:wal-library:1.0.2-LANCE") {
         exclude group: 'io.github.vincenzopalazzo', module: 'material-ui-swing'
         exclude group: 'javax.annotation', module: 'jsr250-api'
         exclude group: 'org.didcommx', module: 'peerdid'

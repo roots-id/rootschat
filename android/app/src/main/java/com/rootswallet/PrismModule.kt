@@ -45,8 +45,10 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
     }
 
     // Beware of the isBlocking. Need to fix with callback or alike
-    @ReactMethod(isBlockingSynchronousMethod = false)
-    fun publishDid(wal: Wallet, didAlias: String) {
-        val output = publishDid(wal, didAlias).toString()
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    fun publishDid(walJson: String, didAlias: String) {
+        var cliWal = Json.decodeFromString<Wallet>(walJson);
+        cliWal = publishDid(cliWal, didAlias);
+        //return Json.encodeToString(cliWal)
     }
 }
