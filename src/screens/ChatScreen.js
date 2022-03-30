@@ -3,7 +3,8 @@ import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendBut
 import { KeyboardAvoidingView, NativeModules, StyleSheet, View } from 'react-native';
 import { Video, VideoPlayer } from 'react-native-video'
 
-import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getUser, processQuickReply,
+import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
+    getFakePromiseAsync, getQuickReplyResultMessage, getUser, processQuickReply,
     PROMPT_PUBLISH_MSG_TYPE, sendMessage, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
@@ -48,9 +49,11 @@ export default function ChatScreen({ route }) {
         setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
     }
 
+    //getFakePromiseAsync(10000);
     async function handleQuickReply(reply) {
-        await processQuickReply(channel, reply);
-        //setMessages((prevMessages) => GiftedChat.append(prevMessages, ));
+        await processQuickReply(channel,reply)
+        setMessages((prevMessages) => GiftedChat.append(
+            prevMessages,mapMessage(getQuickReplyResultMessage(channel,reply))));
     }
 
 //#fad58b
@@ -114,7 +117,7 @@ export default function ChatScreen({ route }) {
           <InputToolbar
               {...props}
                   containerStyle={{
-                    backgroundColor: "#222222",
+                    backgroundColor: "#444444",
                     borderTopColor: "#dddddd",
                     borderTopWidth: 1,
                     padding: 1,
@@ -174,7 +177,7 @@ export default function ChatScreen({ route }) {
 //renderSystemMessage={renderSystemMessage}
 //renderMessageVideo={renderVideo}
   return (
-    <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
+    <View style={{ backgroundColor: "#333333", flex: 1, display: "flex",}}>
       <GiftedChat
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
           onQuickReply={reply => handleQuickReply(reply)}

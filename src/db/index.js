@@ -4,8 +4,8 @@ export const WALLET_DIDS = "dids";
 const channels = []
 //indexed by channel name
 const messages = {}
-
 const userDisplays = {}
+const quickReplyResults = {}
 
 const keyMaster0 =
 {
@@ -130,4 +130,14 @@ export function getMessages(channelId) {
 export function addMessage(channelId, message) {
     console.log("Adding",message,"to channel",channelId)
     messages[channelId].push(message)
+}
+
+export function getQuickReplyResult(replyId) {
+    console.log("Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
+    return quickReplyResults[replyId]
+}
+
+export function addQuickReplyResult(replyId,result) {
+    console.log("Adding quick reply result",replyId,"=",result)
+    quickReplyResults[replyId]=result
 }

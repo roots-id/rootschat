@@ -3,7 +3,7 @@ import { addChannel,addMessage,createUserDisplay,DID_ALIAS,getChannels,getDids,
     getMessages,getUserDisplay,getWallet,newChannel,saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
-import rwLogo from '../assets/LogoOnly1024.png'
+import rwLogo from '../assets/RootsLogoAvatar.png'
 import perLogo from '../assets/smallBWPerson.png'
 import apLogo from '../assets/ATALAPRISM.png'
 //https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
@@ -13,6 +13,7 @@ export const personLogo = perLogo;
 export const prismLogo = apLogo;
 
 export const BLOCKCHAIN_URI_MSG_TYPE = "blockchainUri";
+export const PENDING_STATUS_MESSAGE = "pendingStatus";
 export const PROMPT_PUBLISH_MSG_TYPE = "promptPublish";
 export const STATUS_MSG_TYPE = "status";
 export const CREDENTIAL_JSON_MSG_TYPE = "jsonCredential";
@@ -63,6 +64,130 @@ export function createChannel (channelName,titlePrefix) {
 export function getUser(userId) {
     console.log("Getting user",userId)
     return getUserDisplay(userId);
+}
+
+
+//TODO iterate to verify DID connections if cache is expired
+export function getAllChannels () {
+    if(getChannels().length == 0 && demo) {
+        initializeDemo()
+    }
+
+    getChannels().forEach(function (item, index) {
+      console.log("getting channels",index+".",item.id);
+    });
+
+    const promise1 = new Promise((resolve, reject) => {
+        let result = {paginator: {items: getChannels()}};
+        resolve(result);
+    });
+    return promise1;
+}
+
+export function getChannelDisplayName(channel) {
+  console.log("getting channel display name " + channel);
+  if (channel.type === 'DIRECT') {
+    return channel.members.map((member) => member.displayName).join(', ');
+  } else {
+    return channel.name;
+  }
+}
+
+export function getAllMessages(channel) {
+    console.log("getting messages for channel",channel.id);
+    const channelMsgs = getMessages(channel.id)
+    channelMsgs.forEach(function (item, index) {
+      console.log("channel",channel.title,"has message",index+".",item.id);
+    });
+
+    const promise1 = new Promise((resolve, reject) => {
+        let result = {paginator: {items: channelMsgs}};
+        resolve(result);
+    });
+    return promise1;
+}
+
+function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson) {
+    return {
+        id: idText,
+        body: bodyText,
+        type: statusText,
+        createdTime: timeInMillis,
+        user: userDisplayJson,
+    }
+}
+
+//{
+//        channel: channel,
+//        body: pendingMessages[0].text,
+//      }
+export async function sendMessage(channel,msgText,msgType,userDisplay) {
+    console.log("user",userDisplay.id,"sending",msgText,"to channel",channel.id);
+    let msgNum = getMessages(channel.id).length
+    let msgId = createMessageId(channel.id,userDisplay.id,msgNum);
+    let msgTime = new Date().getTime() + (msgNum%100)
+    let msg = createMessage(msgId, msgText, msgType, msgTime, userDisplay);
+    msg = addMessageExtensions(msg);
+    addMessage(channel.id,msg);
+    return msg
+}
+
+function addMessageExtensions(msg) {
+    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
+        msg = addQuickReply(msg)
+    }
+    return msg
+}
+
+function addQuickReply(msg) {
+    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
+        msg["quickReplies"] = {type: 'checkbox',keepIt: true,
+            values: [{title: 'Yes',value: PROMPT_PUBLISH_MSG_TYPE,},{title: 'No',value: 'no',}],
+        }
+    }
+    return msg
+}
+
+export async function processQuickReply(channel,reply) {
+    console.log("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
+    if(reply && channel) {
+        if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
+            console.log("Publishing DID",channel.id,"to PRISM")
+            //PrismModule.publishDid(getWalletJson, channel.id);
+            await getFakePromise(10000)
+        } else {
+            console.log("reply value was",reply[0]["value"])
+        }
+    } else {
+        console.log("reply",reply,"or channel",channel,"were null")
+    }
+}
+
+//export function pendingQuickReplyMessage(channel,reply) {
+//    console.log("channel",channel,"reply",reply)
+//    sendMessage(channel,"Processing....",PENDING_STATUS_MESSAGE,getUserDisplay(ROOTS_BOT))
+//}
+
+export function getQuickReplyResultMessage(channel,reply) {
+    console.log("getting quick reply result message for channel",channel,"w/ reply",reply)
+     const msgId = createMessageId(channel.id,getUserDisplay(PRISM_BOT).id,getMessages(channel.id).length)
+     const msg = createMessage(msgId, channel.id+" published",
+                   STATUS_MSG_TYPE,new Date().getTime() + (getMessages(channel.id).length%100),getUserDisplay(PRISM_BOT))
+     addMessage(channel.id,msg)
+     return msg
+}
+
+function createMessageId(channelId,user,msgNum) {
+    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(channelId)+ID_SEPARATOR+String(msgNum);
+    console.log("Generated msg id",msgId);
+    return msgId;
+}
+
+const sessionInfo={};
+const sessionState=[];
+export function startChatSession(sessionInfo) {
+    console.log("starting session",sessionInfo);
+    return {session: {end: "session ended"}}
 }
 
 function initDemoUserDisplays() {
@@ -194,116 +319,16 @@ export const walCliCommands=[
 //  return result;
 //}, []);
 
+export async function getFakePromiseAsync(timeoutMillis) {
+    console.log("using fake promise async");
+    await getFakePromise(timeoutMillis)
+}
 
-
-//TODO iterate to verify DID connections if cache is expired
-export function getAllChannels () {
-    if(getChannels().length == 0 && demo) {
-        initializeDemo()
-    }
-
-    getChannels().forEach(function (item, index) {
-      console.log("getting channels",index+".",item.id);
+export function getFakePromise(timeoutMillis) {
+    console.log("using fake promise");
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve('resolved!');
+      }, timeoutMillis);
     });
-
-    const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: getChannels()}};
-        resolve(result);
-    });
-    return promise1;
-}
-
-export function getChannelDisplayName(channel) {
-  console.log("getting channel display name " + channel);
-  if (channel.type === 'DIRECT') {
-    return channel.members.map((member) => member.displayName).join(', ');
-  } else {
-    return channel.name;
-  }
-}
-
-export function getAllMessages(channel) {
-    console.log("getting messages for channel",channel.id);
-    const channelMsgs = getMessages(channel.id)
-    channelMsgs.forEach(function (item, index) {
-      console.log("channel",channel.title,"has message",index+".",item.id);
-    });
-
-    const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: channelMsgs}};
-        resolve(result);
-    });
-    return promise1;
-}
-
-function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson) {
-    return {
-        id: idText,
-        body: bodyText,
-        type: statusText,
-        createdTime: timeInMillis,
-        user: userDisplayJson,
-    }
-}
-
-//{
-//        channel: channel,
-//        body: pendingMessages[0].text,
-//      }
-export async function sendMessage(channel,msgText,msgType,userDisplay) {
-    console.log("user",userDisplay,"sending",msgText,"to channel",channel);
-    let msgNum = getMessages(channel.id).length
-    let msgId = createMessageId(channel.id,userDisplay.id,msgNum);
-    let msgTime = new Date().getTime() + (msgNum%100)
-    let msg = createMessage(msgId, msgText, msgType, msgTime, userDisplay);
-    msg = addMessageExtensions(msg);
-    addMessage(channel.id,msg);
-    //console.log("message sent",msg);
-}
-
-function addMessageExtensions(msg) {
-    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
-        msg = addQuickReply(msg)
-    }
-    return msg
-}
-
-function addQuickReply(msg) {
-    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
-        msg["quickReplies"] = {type: 'checkbox',keepIt: true,
-            values: [{title: 'Yes',value: PROMPT_PUBLISH_MSG_TYPE,},{title: 'No',value: 'no',}],
-        }
-    }
-    return msg
-}
-
-export function processQuickReply(channel,reply) {
-    console.log("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
-    if(reply && channel) {
-        if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
-            console.log("Publishing DID",channel.id,"to PRISM")
-            PrismModule.publishDid(getWalletJson, channel.id);
-        }
-    }
-}
-
-function createMessageId(channelId,user,msgNum) {
-    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(channelId)+ID_SEPARATOR+String(msgNum);
-    console.log("Generated msg id",msgId);
-    return msgId;
-}
-
-//     {
-//        channel: channel,
-//        onReceivedMessage: (message) => {
-//          setMessages((currentMessages) =>
-//              GiftedChat.append(currentMessages, [mapMessage(message)])
-//          );
-//        },
-//      }
-const sessionInfo={};
-const sessionState=[];
-export function startChatSession(sessionInfo) {
-    console.log("starting session",sessionInfo);
-    return {session: {end: "session ended"}}
 }
