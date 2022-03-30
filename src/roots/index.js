@@ -26,30 +26,36 @@ const ROOTS_BOT = "RootsWalletBot1"
 const PRISM_BOT = "PrismBot1"
 const BARTENDER_BOT = "BartenderBot1"
 
-let wallet
 const demo = true
 export const currentTime = new Date().getTime();
 
+function logObj(prefixMsg,obj) {
+    console.log(prefixMsg,obj.toString().substring(1,25),"...")
+}
+
 export function createWallet(walletName,mnemonic,passphrase) {
-    wallet = JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase))
-    saveWallet(wallet);
-    console.log('Wallet created',wallet)
+    saveWallet(JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase)))
+    console.log('Wallet created',getWallet())
+}
+
+function getWalletJson() {
+    const walJson = JSON.stringify(getWallet())
+    logObj('Wallet json retrieved',walJson.substring(1,25))
+    return walJson
 }
 
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channelName,titlePrefix) {
-    if(!wallet) {
-        wallet = createWallet("testWallet","","testPassphrase");
-    }
     console.log("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
-    const walJson = JSON.stringify(wallet)
-    console.log("wallet json being passed",walJson)
-    wallet = JSON.parse(PrismModule.newDID(walJson,channelName))
-    const newDid = wallet[WALLET_DIDS][wallet[WALLET_DIDS].length-1];
+    if(!getWallet()) {
+        createWallet("testWallet","","testPassphrase");
+    }
+    saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),channelName)))
+    const newDid = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1];
     createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
     let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
     sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-    sendMessage(newCh,"Would you like to publish this channel to Prism",
+    sendMessage(newCh,"Would you like to publish this channel to Prism?",
         PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
     return newCh
 }
@@ -276,7 +282,7 @@ export function processQuickReply(channel,reply) {
     if(reply && channel) {
         if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
             console.log("Publishing DID",channel.id,"to PRISM")
-            PrismModule.publishDid(JSON.stringify(wallet), channel.id);
+            PrismModule.publishDid(getWalletJson, channel.id);
         }
     }
 }

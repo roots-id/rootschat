@@ -61,7 +61,7 @@ export function getDid(didAlias) {
     return dids[didAlias]
 }
 
-//let wallet = {
+let wallet;
 //    _id: "walletName1",
 //    mnemonic: ["cousin", "then", "airport", "output", "wheel", "peanut", "coach", "nerve", "shadow", "axis", "cloth", "timber"],
 //    passphrase: "password1",
@@ -74,8 +74,8 @@ export function getWallet() {
     return wallet;
 }
 
-export function saveWallet(wallet) {
-    wallet = wallet;
+export function saveWallet(wal) {
+    wallet = wal;
     console.log("Saved Wallet.")
 }
 
