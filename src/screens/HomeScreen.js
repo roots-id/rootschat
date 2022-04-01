@@ -17,7 +17,7 @@ export default function HomeScreen({navigation}) {
 
   useEffect(() => {
     let isCancelled = false;
-    getAllChannels({ filter: { joined: true } }).then(result => {
+    getAllChannels().then(result => {
       if (!isCancelled) {
         setChannels(result.paginator.items);
 

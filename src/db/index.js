@@ -75,6 +75,7 @@ export function getWallet() {
 }
 
 export function saveWallet(wal) {
+    console.debug("Saving wallet",wal)
     wallet = wal;
     console.log("Saved Wallet.")
 }
@@ -97,7 +98,7 @@ export function newChannel(didAlias, titlePrefix) {
     console.log('Creating a new channel',didAlias)
     let channelJson = {
         id: didAlias,
-        joined: true,
+        published: false,
         title: titlePrefix + didAlias,
         type: "DIRECT",
     };

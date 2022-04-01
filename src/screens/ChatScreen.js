@@ -46,14 +46,15 @@ export default function ChatScreen({ route }) {
 //    //body: PrismModule.createDID(pendingMessages[0].text),
     async function handleSend(pendingMessages) {
         await sendMessage(channel, pendingMessages[0].text, TEXT_MSG_TYPE, getUser(channel.id));
-        setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
+        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
     }
 
     //getFakePromiseAsync(10000);
+//processQuickReply(channel,reply)
     async function handleQuickReply(reply) {
         await processQuickReply(channel,reply)
-        setMessages((prevMessages) => GiftedChat.append(
-            prevMessages,mapMessage(getQuickReplyResultMessage(channel,reply))));
+        await setMessages((prevMessages) =>
+                GiftedChat.append(prevMessages,mapMessage(getQuickReplyResultMessage(channel,reply))));
     }
 
 //#fad58b
@@ -117,7 +118,7 @@ export default function ChatScreen({ route }) {
           <InputToolbar
               {...props}
                   containerStyle={{
-                    backgroundColor: "#444444",
+                    backgroundColor: "#333333",
                     borderTopColor: "#dddddd",
                     borderTopWidth: 1,
                     padding: 1,
@@ -176,12 +177,24 @@ export default function ChatScreen({ route }) {
 
 //renderSystemMessage={renderSystemMessage}
 //renderMessageVideo={renderVideo}
+//{
+//                                  type: "url",
+//                                  style: styles.bigBlue,
+//                                  onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
+//                                }
   return (
-    <View style={{ backgroundColor: "#333333", flex: 1, display: "flex",}}>
+    <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
       <GiftedChat
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
           onQuickReply={reply => handleQuickReply(reply)}
           onSend={messages => handleSend(messages)}
+          parsePatterns={(linkStyle) => [
+                  {
+                    pattern: /#(\w+)/,
+                    style: linkStyle,
+                    onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
+                  },
+                ]}
           renderBubble={props => renderBubble(props)}
           renderInputToolbar={props => renderInputToolbar(props)}
           renderAllAvatars={true}

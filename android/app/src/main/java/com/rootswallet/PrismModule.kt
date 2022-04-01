@@ -2,6 +2,7 @@ package com.rootswallet
 
 import android.annotation.SuppressLint
 import android.util.Log
+import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
@@ -10,6 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import java.util.*
+import kotlin.concurrent.thread
 
 class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -44,11 +46,30 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         return Json.encodeToString<Wallet>(cliWal);
     }
 
-    // Beware of the isBlocking. Need to fix with callback or alike
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    fun publishDid(walJson: String, didAlias: String) {
-        var cliWal = Json.decodeFromString<Wallet>(walJson);
-        cliWal = publishDid(cliWal, didAlias);
-        //return Json.encodeToString(cliWal)
+    @ReactMethod
+    fun publishDid(walJson: String, didAlias: String, promise: Promise) {
+        Log.d("PRISM_TAG","Publishing "+didAlias+" from wallet "+walJson);
+        thread(start = true) {
+            try {
+                //                Thread.sleep(10000);
+
+                var cliWal = Json.decodeFromString<Wallet>(walJson);
+                cliWal = publishDid(cliWal, didAlias);
+                var newWalJson = Json.encodeToString(cliWal)
+                Log.d("PRISM_TAG","Published "+didAlias+" from wallet "+newWalJson)
+                promise.resolve(newWalJson);
+            } catch (e: Exception) {
+                promise.reject("Publish Error", e);
+            }
+        }
     }
+
+//    @ReactMethod
+//    public void fetch(final String path, final Promise promise) {
+//        new Thread(new Runnable() {
+//            public void run() {
+//                root.child(path)...
+//            }
+//        }).start();
+//    }
 }
