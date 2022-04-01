@@ -13,10 +13,12 @@ export const personLogo = perLogo;
 export const prismLogo = apLogo;
 
 export const BLOCKCHAIN_URI_MSG_TYPE = "blockchainUri";
-export const PENDING_STATUS_MESSAGE = "pendingStatus";
-export const PROMPT_PUBLISH_MSG_TYPE = "promptPublish";
-export const STATUS_MSG_TYPE = "status";
 export const CREDENTIAL_JSON_MSG_TYPE = "jsonCredential";
+export const PENDING_STATUS_MESSAGE = "pendingStatus";
+export const PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE = "acceptCredential"
+export const PROMPT_PUBLISH_MSG_TYPE = "promptPublish";
+export const PRISM_LINK_MSG_TYPE = "prismLink"
+export const STATUS_MSG_TYPE = "status";
 export const TEXT_MSG_TYPE = "text"
 
 export const ACHIEVEMENT_MSG_PREFIX = "You have a new achievement: ";
@@ -34,6 +36,13 @@ function logObj(prefixMsg,obj) {
     console.log(prefixMsg,obj.toString().substring(1,25),"...")
 }
 
+//----------------- User -----------------
+export function getUser(userId) {
+    console.log("Getting user",userId)
+    return getUserDisplay(userId);
+}
+
+//----------------- Wallet ---------------------
 export function createWallet(walletName,mnemonic,passphrase) {
     saveWallet(JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase)))
     console.log('Wallet created',getWallet())
@@ -45,6 +54,7 @@ function getWalletJson() {
     return walJson
 }
 
+//------------------ Channels (DIDs) --------------
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channelName,titlePrefix) {
     console.log("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
@@ -59,11 +69,6 @@ export function createChannel (channelName,titlePrefix) {
     sendMessage(newCh,"Would you like to publish this channel to Prism?",
         PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
     return newCh
-}
-
-export function getUser(userId) {
-    console.log("Getting user",userId)
-    return getUserDisplay(userId);
 }
 
 
@@ -93,6 +98,7 @@ export function getChannelDisplayName(channel) {
   }
 }
 
+// ---------------- Messages (Events) ----------------------
 export function getAllMessages(channel) {
     console.log("getting messages for channel",channel.id);
     const channelMsgs = getMessages(channel.id)
@@ -117,10 +123,11 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson) 
     }
 }
 
-//{
-//        channel: channel,
-//        body: pendingMessages[0].text,
-//      }
+
+export async function sendMessages(channel,msgs,msgType,userDisplay) {
+    await Promise.all(msgs.map(msg => sendMessage(channel,msg.text,msgType,userDisplay)))
+}
+
 export async function sendMessage(channel,msgText,msgType,userDisplay) {
     console.log("user",userDisplay.id,"sending",msgText,"to channel",channel.id);
     let msgNum = getMessages(channel.id).length
@@ -145,14 +152,30 @@ function addQuickReply(msg) {
             values: [{title: 'Yes',value: PROMPT_PUBLISH_MSG_TYPE,}],
         }
     }
+    if(msg.type === PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE) {
+        msg["quickReplies"] = {type: 'checkbox',keepIt: true,
+            values: [{title: 'Yes',value: PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,}],
+        }
+    }
     return msg
 }
 
 export async function processQuickReply(channel,reply) {
     console.log("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
+    const msgs = []
     if(reply && channel) {
         if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
-            await publishChannel(channel);
+            const pubChan = await publishChannel(channel);
+//            const msgId = createMessageId(channel.id,getUserDisplay(PRISM_BOT).id,getMessages(channel.id).length)
+//            const msg = createMessage(msgId, ,
+//                STATUS_MSG_TYPE,new Date().getTime() + (getMessages(channel.id).length%100),getUserDisplay(PRISM_BOT))
+//            addMessage(channel.id,msg)
+            const publishedMsg = await sendMessage(pubChan.id,pubChan.id+" published to Prism.",
+                    TEXT_MSG_TYPE,getUserDisplay(PRISM_BOT))
+            msgs.push(publishedMsg)
+            const statusMsgs = await sendChannelSystemMessages(pubChan)
+            msgs.concat(statusMsgs);
+            return msgs
         } else {
             console.log("reply value was",reply[0]["value"])
         }
@@ -161,25 +184,46 @@ export async function processQuickReply(channel,reply) {
     }
 }
 
-export async function publishChannel(channel) {
-    console.log("Publishing DID",channel.id,"to PRISM")
-    const newWalJson = await PrismModule.publishDid(getWalletJson(), channel.id);
-    saveWallet(JSON.parse(newWalJson))
-    channel["published"]=true
-    channel["title"]=channel.title+"🔗"
+function sendChannelSystemMessages(channel) {
+    const channelMsgs = []
+    channelMsgs.push(sendMessage(channel,JSON.stringify({alias: "holder_did",
+        didIdx: 0,
+        uriCanonical: "did:prism:654a4a9113e7625087fd0d3143fcac05ba34013c55e1be12daadd2d5210adc4d",
+        uriLongForm: "did:prism:654a4a9113e7625087fd0d3143fcac05ba34013c55e1be12daadd2d5210adc4d:Cj8KPRI7CgdtYXN0ZXIwEAFKLgoJc2VjcDI1NmsxEiEDA7B2nZ_CvcIdkU2ovzBEovGzjwZECMUeHUeNo5_0Jug",
+        operationHash: "",
+        keyPairs: [
+          {
+              keyId: "master0",
+              didIdx: 0,
+              keyType: 0,
+              keyIdx: 0,
+              privateKey: "9c2a64d860cb86ce0af23787fccd2ad12a73d5e758c706d8567de49dec2ec029",
+              publicKey: "0403b0769d9fc2bdc21d914da8bf3044a2f1b38f064408c51e1d478da39ff426e884c34858bcfa2afbd3cc4e4b1a8d3fc848b74f92360e91729aaf8d77d8207963",
+              revoked: false
+          }
+        ]
+    }),
+    "jsonDid",
+    getUserDisplay(PRISM_BOT)))
+
+    channelMsgs.push(sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+                  BLOCKCHAIN_URI_MSG_TYPE,
+                  getUserDisplay(PRISM_BOT)))
+
+    return channelMsgs;
 }
 
-//export function pendingQuickReplyMessage(channel,reply) {
-//    console.log("channel",channel,"reply",reply)
-//    sendMessage(channel,"Processing....",PENDING_STATUS_MESSAGE,getUserDisplay(ROOTS_BOT))
-
-export function getQuickReplyResultMessage(channel,reply) {
-     console.log("getting quick reply result message for channel",channel,"w/ reply",reply)
-     const msgId = createMessageId(channel.id,getUserDisplay(PRISM_BOT).id,getMessages(channel.id).length)
-     const msg = createMessage(msgId, channel.id+" published to Prism https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=1f4f19f2016c4468777da24a5656b9b009550a601192960e22f1233af4e8b3ef",
-                   STATUS_MSG_TYPE,new Date().getTime() + (getMessages(channel.id).length%100),getUserDisplay(PRISM_BOT))
-     addMessage(channel.id,msg)
-     return msg
+export async function publishChannel(channel) {
+    if(!channel["published"]) {
+        console.log("Publishing DID",channel.id,"to Prism")
+        const newWalJson = await PrismModule.publishDid(getWalletJson(), channel.id);
+        saveWallet(JSON.parse(newWalJson))
+        channel["published"]=true
+        channel["title"]="🔗"+channel.title
+    } else {
+        console.log(channel.id,"is already published to Prism")
+    }
+    return channel
 }
 
 function createMessageId(channelId,user,msgNum) {
@@ -188,12 +232,61 @@ function createMessageId(channelId,user,msgNum) {
     return msgId;
 }
 
+// ------------------ Credentials ----------
+
+export function createCredential(channel) {
+    if(demo && channel["published"]) {
+        sendMessage(channel,"Credential issued",
+                          STATUS_MSG_TYPE,
+                          getUserDisplay(ROOTS_BOT))
+        sendMessage(channel,"Valid credential",
+                      STATUS_MSG_TYPE,
+                      getUserDisplay(ROOTS_BOT))
+        sendMessage(channel,"Credential exported",
+                      STATUS_MSG_TYPE,
+                      getUserDisplay(ROOTS_BOT))
+        sendMessage(channel,JSON.stringify({
+                           encodedSignedCredential: "eyJpZCI6ImRpZDpwcmlzbTozYWU4YmFkYzAzMWEzZjU2YjlmYzZiNWEwMmVhNDczNWJmY2RmM2I5ODFkODc4NjBkNWMxNjkzYzBkODA2OGJiIiwia2V5SWQiOiJpc3N1aW5nMCIsImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJBbGljZSIsImRlZ3JlZSI6IkNvbXB1dGVyIFNjaWVuY2UiLCJkYXRlIjoiMjAyMi0wMy0xMCAxNzoxNjo1OCIsImlkIjoiZGlkOnByaXNtOjY1NGE0YTkxMTNlNzYyNTA4N2ZkMGQzMTQzZmNhYzA1YmEzNDAxM2M1NWUxYmUxMmRhYWRkMmQ1MjEwYWRjNGQ6Q2o4S1BSSTdDZ2R0WVhOMFpYSXdFQUZLTGdvSmMyVmpjREkxTm1zeEVpRURBN0IyblpfQ3ZjSWRrVTJvdnpCRW92R3pqd1pFQ01VZUhVZU5vNV8wSnVnIn19.MEUCIQC8WiVfl6nH-DIBdK9SN0SzqYNN49WnuECk77V8-vUIQwIgHLZUkCRivnv7NiIurd2YR5MWjUUIbbKHDJovnbexeNI",
+                           proof: {
+                               "hash": "bbb3fee220db35c2fc717ca61e0e55e2f670cfb238ff0484ea768dd1aaf23522",
+                               "index": 0,
+                               "siblings": [
+                               ]
+                           }
+                        }),
+                        CREDENTIAL_JSON_MSG_TYPE,
+                        getUserDisplay(PRISM_BOT))
+        sendMessage(channel,"Credential imported",
+                    STATUS_MSG_TYPE,
+                    getUserDisplay(ROOTS_BOT))
+        sendMessage(channel,"Valid credential.",
+                      STATUS_MSG_TYPE,
+                      getUserDisplay(ROOTS_BOT))
+    //    sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+    //                 BLOCKCHAIN_URI_MSG_TYPE,
+    //                 getUserDisplay(PRISM_BOT))
+        sendMessage(channel,"Credential revoked",
+                      STATUS_MSG_TYPE,
+                      getUserDisplay(ROOTS_BOT))
+        sendMessage(channel,"Invalid credential.",
+                    STATUS_MSG_TYPE,
+                    getUserDisplay(ROOTS_BOT))
+    }
+}
+
+// ----------------- Polling ------------
+
+
+
+// ------------------ Session ---------------
 const sessionInfo={};
 const sessionState=[];
 export function startChatSession(sessionInfo) {
     console.log("starting session",sessionInfo);
     return {session: {end: "session ended"}}
 }
+
+//----------- DEMO Stuff --------------------
 
 export async function getFakePromiseAsync(timeoutMillis) {
     console.log("using fake promise async");
@@ -231,66 +324,6 @@ function initializeDemo() {
 
 function initDemoIntro() {
     const channel = createChannel("Introduction Channel","Under Construction - ")
-
-
-
-//    sendMessage(channel,JSON.stringify({alias: "holder_did",
-//                      didIdx: 0,
-//                      uriCanonical: "did:prism:654a4a9113e7625087fd0d3143fcac05ba34013c55e1be12daadd2d5210adc4d",
-//                      uriLongForm: "did:prism:654a4a9113e7625087fd0d3143fcac05ba34013c55e1be12daadd2d5210adc4d:Cj8KPRI7CgdtYXN0ZXIwEAFKLgoJc2VjcDI1NmsxEiEDA7B2nZ_CvcIdkU2ovzBEovGzjwZECMUeHUeNo5_0Jug",
-//                      operationHash: "",
-//                      keyPairs: [
-//                          {
-//                              keyId: "master0",
-//                              didIdx: 0,
-//                              keyType: 0,
-//                              keyIdx: 0,
-//                              privateKey: "9c2a64d860cb86ce0af23787fccd2ad12a73d5e758c706d8567de49dec2ec029",
-//                              publicKey: "0403b0769d9fc2bdc21d914da8bf3044a2f1b38f064408c51e1d478da39ff426e884c34858bcfa2afbd3cc4e4b1a8d3fc848b74f92360e91729aaf8d77d8207963",
-//                              revoked: false
-//                          }
-//                      ]
-//                  }),
-//                 "jsonDid",
-//                  getUserDisplay(PRISM_BOT))
-//    sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-//                  BLOCKCHAIN_URI_MSG_TYPE,
-//                  getUserDisplay(PRISM_BOT))
-    sendMessage(channel,"Credential issued",
-                  STATUS_MSG_TYPE,
-                  getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"Valid credential",
-                  STATUS_MSG_TYPE,
-                  getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"Credential exported",
-                  STATUS_MSG_TYPE,
-                  getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,JSON.stringify({
-                       encodedSignedCredential: "eyJpZCI6ImRpZDpwcmlzbTozYWU4YmFkYzAzMWEzZjU2YjlmYzZiNWEwMmVhNDczNWJmY2RmM2I5ODFkODc4NjBkNWMxNjkzYzBkODA2OGJiIiwia2V5SWQiOiJpc3N1aW5nMCIsImNyZWRlbnRpYWxTdWJqZWN0Ijp7Im5hbWUiOiJBbGljZSIsImRlZ3JlZSI6IkNvbXB1dGVyIFNjaWVuY2UiLCJkYXRlIjoiMjAyMi0wMy0xMCAxNzoxNjo1OCIsImlkIjoiZGlkOnByaXNtOjY1NGE0YTkxMTNlNzYyNTA4N2ZkMGQzMTQzZmNhYzA1YmEzNDAxM2M1NWUxYmUxMmRhYWRkMmQ1MjEwYWRjNGQ6Q2o4S1BSSTdDZ2R0WVhOMFpYSXdFQUZLTGdvSmMyVmpjREkxTm1zeEVpRURBN0IyblpfQ3ZjSWRrVTJvdnpCRW92R3pqd1pFQ01VZUhVZU5vNV8wSnVnIn19.MEUCIQC8WiVfl6nH-DIBdK9SN0SzqYNN49WnuECk77V8-vUIQwIgHLZUkCRivnv7NiIurd2YR5MWjUUIbbKHDJovnbexeNI",
-                       proof: {
-                           "hash": "bbb3fee220db35c2fc717ca61e0e55e2f670cfb238ff0484ea768dd1aaf23522",
-                           "index": 0,
-                           "siblings": [
-                           ]
-                       }
-                    }),
-                    CREDENTIAL_JSON_MSG_TYPE,
-                    getUserDisplay(PRISM_BOT))
-    sendMessage(channel,"Credential imported",
-                STATUS_MSG_TYPE,
-                getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"Valid credential.",
-                  STATUS_MSG_TYPE,
-                  getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-                 BLOCKCHAIN_URI_MSG_TYPE,
-                 getUserDisplay(PRISM_BOT))
-    sendMessage(channel,"Credential revoked",
-                  STATUS_MSG_TYPE,
-                  getUserDisplay(ROOTS_BOT))
-    sendMessage(channel,"Invalid credential.",
-                STATUS_MSG_TYPE,
-                getUserDisplay(ROOTS_BOT))
 }
 
 function initDemoAchievements() {

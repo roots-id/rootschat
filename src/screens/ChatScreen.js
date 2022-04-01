@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
-import { KeyboardAvoidingView, NativeModules, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, NativeModules, StyleSheet, Text, View } from 'react-native';
 import { Video, VideoPlayer } from 'react-native-video'
+import { useInterval } from 'usehooks-ts'
 
-import { BLOCKCHAIN_URI_MSG_TYPE, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
+import { BLOCKCHAIN_URI_MSG_TYPE, createCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
     getFakePromiseAsync, getQuickReplyResultMessage, getUser, processQuickReply,
-    PROMPT_PUBLISH_MSG_TYPE, sendMessage, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
+    PROMPT_PUBLISH_MSG_TYPE, sendMessage, sendMessages, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
@@ -43,18 +44,22 @@ export default function ChatScreen({ route }) {
 //    return startChatSessionResult.session.end;
   }, [channel]);
 
-//    //body: PrismModule.createDID(pendingMessages[0].text),
+    const credential = useInterval(async () => {
+        console.log("Polling to create credentials");
+        createCredential(channel)
+    }, 10000);
+
     async function handleSend(pendingMessages) {
-        await sendMessage(channel, pendingMessages[0].text, TEXT_MSG_TYPE, getUser(channel.id));
+        await sendMessages(channel, pendingMessages, TEXT_MSG_TYPE, getUser(channel.id));
         await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
     }
 
     //getFakePromiseAsync(10000);
 //processQuickReply(channel,reply)
     async function handleQuickReply(reply) {
-        await processQuickReply(channel,reply)
+        const resultMessages = await processQuickReply(channel,reply)
         await setMessages((prevMessages) =>
-                GiftedChat.append(prevMessages,mapMessage(getQuickReplyResultMessage(channel,reply))));
+                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }
 
 //#fad58b
@@ -91,27 +96,27 @@ export default function ChatScreen({ route }) {
         return null;
     }
 
-    function renderVideo(message) {
-      const source = getSource(message);
-      if (source) {
-        return (
-          <View style={styles.videoContainer} key={message.currentMessage._id}>
-            {Platform.OS === 'ios' ? <Video
-              style={styles.videoElement}
-              shouldPlay
-              height={156}
-              width={242}
-              muted={true}
-              source={{ uri: source }}
-              allowsExternalPlayback={false}></Video> : <VideoPlayer
-              style={styles.videoElement}
-              source={{ uri: source }}
-            />}
-          </View>
-        );
-      }
-      return <></>;
-    };
+//    function renderVideo(message) {
+//      const source = getSource(message);
+//      if (source) {
+//        return (
+//          <View style={styles.videoContainer} key={message.currentMessage._id}>
+//            {Platform.OS === 'ios' ? <Video
+//              style={styles.videoElement}
+//              shouldPlay
+//              height={156}
+//              width={242}
+//              muted={true}
+//              source={{ uri: source }}
+//              allowsExternalPlayback={false}></Video> : <VideoPlayer
+//              style={styles.videoElement}
+//              source={{ uri: source }}
+//            />}
+//          </View>
+//        );
+//      }
+//      return <></>;
+//    };
 
     function renderInputToolbar(props) {
       return (
@@ -191,11 +196,16 @@ export default function ChatScreen({ route }) {
           parsePatterns={(linkStyle) => [
                   {
                     pattern: /#(\w+)/,
-                    style: linkStyle,
+                    style: styles.hashtag,
                     onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
                   },
+                  {
+                      pattern: /published to Prism/,
+                      style: styles.url,
+                      onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
+                  }
                 ]}
-          renderBubble={props => renderBubble(props)}
+
           renderInputToolbar={props => renderInputToolbar(props)}
           renderAllAvatars={true}
           renderAvatarOnTop={true}
@@ -211,6 +221,7 @@ export default function ChatScreen({ route }) {
 }
 
 //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
+//<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
 function mapMessage(message) {
   //console.log("Map message for gifted",message);
   mappedMsg={}
@@ -222,6 +233,7 @@ function mapMessage(message) {
       mappedMsg["quickReplies"] = message["quickReplies"]
   }
   mappedMsg["type"] = message.type
+  mappedMsg["system"] = message.system
     //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
     // You can also add a video prop:
     //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
@@ -256,4 +268,40 @@ const styles = StyleSheet.create({
   red: {
     color: 'red',
   },
+    url: {
+      color: 'red',
+      textDecorationLine: 'underline',
+    },
+
+    email: {
+      textDecorationLine: 'underline',
+    },
+
+    text: {
+      color: 'blue',
+      fontSize: 15,
+    },
+
+    phone: {
+      color: 'blue',
+      textDecorationLine: 'underline',
+    },
+
+    name: {
+      color: 'red',
+    },
+
+    username: {
+      color: 'green',
+      fontWeight: 'bold',
+    },
+
+    magicNumber: {
+      fontSize: 42,
+      color: 'pink',
+    },
+
+    hashTag: {
+      fontStyle: 'italic',
+    },
 });

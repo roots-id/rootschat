@@ -124,12 +124,12 @@ export function getMessages(channelId) {
     if(!messages[channelId]) {
         messages[channelId]=[]
     }
-    console.log("Getting channel",channelId,"messages",messages[channelId])
+    console.log("Getting channel",channelId,"messages",messages[channelId].toString().substring(1,300))
     return messages[channelId];
 }
 
 export function addMessage(channelId, message) {
-    console.log("Adding",message,"to channel",channelId)
+    console.log("Adding",message.toString().substring(1,300),"to channel",channelId)
     messages[channelId].push(message)
 }
 
