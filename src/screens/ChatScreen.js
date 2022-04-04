@@ -4,8 +4,8 @@ import { KeyboardAvoidingView, NativeModules, StyleSheet, Text, View } from 'rea
 import { Video, VideoPlayer } from 'react-native-video'
 import { useInterval } from 'usehooks-ts'
 
-import { BLOCKCHAIN_URI_MSG_TYPE, createCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
-    getFakePromiseAsync, getQuickReplyResultMessage, getUser, processQuickReply,
+import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
+    getFakePromiseAsync, getMessagesSince, getQuickReplyResultMessage, getUser, isDemo, processQuickReply,
     PROMPT_PUBLISH_MSG_TYPE, sendMessage, sendMessages, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
@@ -22,44 +22,96 @@ export default function ChatScreen({ route }) {
 //                      displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
 //                      }
 //  const [ user, setUser ] = useState(user);
-  const { channel } = route.params;
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const { channel } = route.params;
+    const [messages, setMessages] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [madeCredential, setMadeCredential] = useState(false)
 
-  useEffect(() => {
+    useEffect(() => {
+        const chatSession = startChatSession({
+            channel: channel,
+            onReceivedMessage: (message) => {
+                console.log("onReceivedMessage called w/message",message)
+                setMessages((currentMessages) =>
+                    GiftedChat.append(currentMessages, [mapMessage(message)])
+                );
+            },
+            onReceivedKeystrokes: (keystrokes) => {
+             // handle received typing keystrokes
+            },
+            onTypingStarted: (user) => {
+             // handle user starts typing
+            },
+            onTypingStopped: (user) => {
+             // handle user stops typing
+            },
+            onParticipantEnteredChat: (user) => {
+             // handle user who just entered the chat
+            },
+            onParticipantLeftChat: (user) => {
+             // handle user who just left the chat
+            },
+            onParticipantPresenceChanged: (user) => {
+             // handle user who became online, offline, do not disturb, invisible
+            },
+            onMessageRead: (message, receipt) => {
+             // handle read receipt for message
+            },
+            onMessageUpdated: (message) => {
+             // handle message changes
+            },
+            onChannelUpdated: (channel) => {
+             // handle channel changes
+            },
+        });
+        if (chatSession.succeeded) {
+            const session = chatSession.session; // Handle session
+        }
+        if (chatSession.failed) {
+            const error = chatSession.error; // Handle error
+        }
+        getAllMessages(channel)
+        .then((result) => {
+            setMessages(result.paginator.items.map(mapMessage));
+            setLoading(false);
+        });
+        return chatSession.end;
+    }, [channel]);
 
-//    const startChatSessionResult = startChatSession({
-//      channel: channel,
-//      onReceivedMessage: (message) => {
-//        setMessages((currentMessages) =>
-//            GiftedChat.append(currentMessages, [mapMessage(message)])
-//        );
-//      },
-//    });
-    getAllMessages(channel)
-    .then((result) => {
-      setMessages(result.paginator.items.map(mapMessage));
-      setLoading(false);
-    });
-//    return startChatSessionResult.session.end;
-  }, [channel]);
+    useEffect(() => {
+        console.log("Front-end messages updated")
+    }, [messages]);
 
-    const credential = useInterval(async () => {
-        console.log("Polling to create credentials");
-        createCredential(channel)
-    }, 10000);
+//    if(isDemo) {
+//        // polling to generate credential
+//        useInterval(async () => {
+//            console.log("Polling to create credentials");
+//            setMadeCredential(createDemoCredential(channel,madeCredential))
+//            if(madeCredential) {
+//                let pendingMsgs = []
+//                if(messages.length > 0) {
+//                    pendingMsgs = getMessagesSince(channel,messages[messages.length-1]["id"]).resolve()
+//                } else {
+//                    pendingMsgs = getAllMessages(channel).resolve()
+//                }
+//                await setMessages((prevMessages) =>
+//                    GiftedChat.append(prevMessages,pendingMsgs.map((pendingMsg) => mapMessage(pendingMsg))));
+//                setMessages(messages.concat[pendingMsgs)
+//            }
+//        }, madeCredential ? null : 5000,);
+//    }
 
-    async function handleSend(pendingMessages) {
-        await sendMessages(channel, pendingMessages, TEXT_MSG_TYPE, getUser(channel.id));
-        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMessages));
+    async function handleSend(pendingMsgs) {
+        await sendMessages(channel, pendingMsgs, TEXT_MSG_TYPE, getUser(channel.id));
+//        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMsgs));
     }
 
     //getFakePromiseAsync(10000);
 //processQuickReply(channel,reply)
     async function handleQuickReply(reply) {
-        const resultMessages = await processQuickReply(channel,reply)
-        await setMessages((prevMessages) =>
-                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
+        await processQuickReply(channel,reply)
+//        await setMessages((prevMessages) =>
+//                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }
 
 //#fad58b

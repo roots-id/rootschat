@@ -64,6 +64,23 @@ class PrismModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
         }
     }
 
+    @ReactMethod
+    fun issueCred(walJson: String, didAlias: String, credJson: String, promise: Promise) {
+        Log.d("PRISM_TAG","Issuing credential for "+didAlias+" from wallet "+walJson);
+        thread(start = true) {
+            try {
+                var cliWal = Json.decodeFromString<Wallet>(walJson);
+                val cliCred = Json.decodeFromString<IssuedCredential>(credJson);
+                cliWal = issueCredential(cliWal, didAlias, cliCred)
+                var newWalJson = Json.encodeToString(cliWal)
+                Log.d("PRISM_TAG","Credential "+cliCred.verifiedCredential+" for did "+didAlias+" from wallet "+newWalJson)
+                promise.resolve(newWalJson);
+            } catch (e: Exception) {
+                promise.reject("Publish Error", e);
+            }
+        }
+    }
+
 //    @ReactMethod
 //    public void fetch(final String path, final Promise promise) {
 //        new Thread(new Runnable() {
