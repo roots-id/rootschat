@@ -104,15 +104,13 @@ export function getChannelDisplayName(channel) {
 }
 
 function getDid(didAlias) {
-    getWallet()[WALLET_DIDS].forEach(did => {
+    return getWallet()[WALLET_DIDS].filter(did => {
         if(did["alias"] === didAlias) {
-            console.log("DID alias",didAlias,"matched",did["alias"])
-            return did
+            return true;
         } else {
-            console.log("DID alias",didAlias,"didn't match",did["alias"])
+            return false;
         }
     });
-    console.log("Didn't find DID",didAlias,"in wallet",getWalletJson())
 }
 
 // ---------------- Messages (Events) ----------------------

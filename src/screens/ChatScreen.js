@@ -285,7 +285,9 @@ function mapMessage(message) {
       mappedMsg["quickReplies"] = message["quickReplies"]
   }
   mappedMsg["type"] = message.type
-  mappedMsg["system"] = message.system
+  if(message["system"]) {
+      mappedMsg["system"] = message.system
+  }
     //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
     // You can also add a video prop:
     //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
