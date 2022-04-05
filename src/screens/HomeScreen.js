@@ -67,7 +67,7 @@ export default function HomeScreen({navigation}) {
 
     const styles = StyleSheet.create({
       container: {
-        backgroundColor: '#222222',
+        backgroundColor: '#20190e',
         flex: 1,
       },
       listTitle: {
@@ -79,7 +79,7 @@ export default function HomeScreen({navigation}) {
         color: '#dddddd',
       },
       item: {
-          backgroundColor: '#222222',
+          backgroundColor: '#20190e',
           padding: 20,
           marginVertical: 8,
           marginHorizontal: 16,

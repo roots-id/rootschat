@@ -8,6 +8,12 @@ const messages = {}
 const userDisplays = {}
 const quickReplyResults = {}
 
+export function logger(...args) {
+    if(args.length > 0) {
+        console.log(...args.map(arg => String(arg).substring(0,150),"..."));
+    }
+}
+
 //const keyMaster0 =
 //{
 //    keyId: "master0",
@@ -76,9 +82,9 @@ export function getWallet() {
 }
 
 export function saveWallet(wal) {
-    console.debug("Saving wallet",JSON.stringify(wal).substring(0,100),'...')
+    console.debug("Saving wallet",JSON.stringify(wal),'...')
     wallet = wal;
-    console.log("Saved Wallet.")
+    logger("Saved Wallet.")
 }
 
 export function createUserDisplay(userAlias, userName, userPicUrl) {
@@ -87,16 +93,16 @@ export function createUserDisplay(userAlias, userName, userPicUrl) {
         displayName: userName,
         displayPictureUrl: userPicUrl,
     }
-    console.log("Created User Display w/ alias",userAlias," = ",userDisplays[userAlias])
+    logger("Created User Display w/ alias",userAlias," = ",JSON.stringify(userDisplays[userAlias]))
 }
 
 export function getUserDisplay(userAlias) {
-    console.log("Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]).substring(0,100),"....")
+    logger("Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]),"....")
     return userDisplays[userAlias]
 }
 
 export function newChannel(didAlias, titlePrefix) {
-    console.log('Creating a new channel',didAlias)
+    logger('Creating a new channel',didAlias)
     let channelJson = {
         id: didAlias,
         published: false,
@@ -104,7 +110,7 @@ export function newChannel(didAlias, titlePrefix) {
         type: "DIRECT",
     };
     addChannel(channelJson)
-    console.log(didAlias,'channel created.')
+    logger(didAlias,'channel created.')
     return channelJson
 }
 
@@ -115,9 +121,9 @@ export function getChannels() {
 export function addChannel(channelJson) {
     if(!channels.includes(channelJson.id)) {
         channels.push(channelJson)
-        console.log("Channel",channelJson.id,"added.")
+        logger("Channel",channelJson.id,"added.")
     } else {
-        console.log("Channel",channelJson.id,"already exists.  Not adding")
+        logger("Channel",channelJson.id,"already exists.  Not adding")
     }
 }
 
@@ -127,7 +133,7 @@ export function getMessages(channelId, startFromMsgId) {
     }
 
     let chMsgs = messages[channelId]
-    console.log("Getting channel",channelId,chMsgs.length,"messages")
+    logger("Getting channel",channelId,chMsgs.length,"messages")
 
     if(startFromMsgId) {
         for(i = 0; i < chMsgs.length; i++) {
@@ -145,16 +151,16 @@ export function getMessages(channelId, startFromMsgId) {
 }
 
 export function addMessage(channelId, message) {
-    console.log("Adding",JSON.stringify(message).substring(0,100),".... to channel",channelId)
+    logger("Adding",JSON.stringify(message),".... to channel",channelId)
     messages[channelId].push(message)
 }
 
 export function getQuickReplyResult(replyId) {
-    console.log("Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
+    logger("Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
     return quickReplyResults[replyId]
 }
 
 export function addQuickReplyResult(replyId,result) {
-    console.log("Adding quick reply result",replyId,"=",result)
+    logger("Adding quick reply result",replyId,"=",result)
     quickReplyResults[replyId]=result
 }

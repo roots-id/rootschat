@@ -5,8 +5,10 @@ import { Video, VideoPlayer } from 'react-native-video'
 import { useInterval } from 'usehooks-ts'
 
 import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
-    getFakePromiseAsync, getMessagesSince, getQuickReplyResultMessage, getUser, isDemo, processQuickReply,
-    PROMPT_PUBLISH_MSG_TYPE, sendMessage, sendMessages, startChatSession, STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
+    getFakePromiseAsync, getMessagesSince, getQuickReplyResultMessage, getUser, isDemo, isProcessing,
+    processQuickReply,
+    PROMPT_PUBLISH_MSG_TYPE, sendMessage, sendMessages, startChatSession,
+    STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
 
@@ -26,12 +28,12 @@ export default function ChatScreen({ route }) {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
+    const [processing, setProcessing] = useState(false)
 
     useEffect(() => {
         const chatSession = startChatSession({
             channel: channel,
             onReceivedMessage: (message) => {
-                console.log("onReceivedMessage called w/message",message)
                 setMessages((currentMessages) =>
                     GiftedChat.append(currentMessages, [mapMessage(message)])
                 );
@@ -40,7 +42,7 @@ export default function ChatScreen({ route }) {
              // handle received typing keystrokes
             },
             onTypingStarted: (user) => {
-             // handle user starts typing
+                //handle typing
             },
             onTypingStopped: (user) => {
              // handle user stops typing
@@ -63,6 +65,9 @@ export default function ChatScreen({ route }) {
             onChannelUpdated: (channel) => {
              // handle channel changes
             },
+            onProcessing: (processing) => {
+                setProcessing(processing)
+            },
         });
         if (chatSession.succeeded) {
             const session = chatSession.session; // Handle session
@@ -79,8 +84,12 @@ export default function ChatScreen({ route }) {
     }, [channel]);
 
     useEffect(() => {
-        console.log("Front-end messages updated")
+        //console.log("Front-end messages updated")
     }, [messages]);
+
+    useEffect(() => {
+        console.log("Checked Processing")
+    }, [processing]);
 
 //    if(isDemo) {
 //        // polling to generate credential
@@ -102,14 +111,15 @@ export default function ChatScreen({ route }) {
 //    }
 
     async function handleSend(pendingMsgs) {
-        await sendMessages(channel, pendingMsgs, TEXT_MSG_TYPE, getUser(channel.id));
+        const result = await sendMessages(channel, pendingMsgs, TEXT_MSG_TYPE, getUser(channel.id));
 //        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMsgs));
     }
 
     //getFakePromiseAsync(10000);
 //processQuickReply(channel,reply)
     async function handleQuickReply(reply) {
-        await processQuickReply(channel,reply)
+        const result = await processQuickReply(channel,reply)
+        console.log("Quick Reply processing complete",result)
 //        await setMessages((prevMessages) =>
 //                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }
@@ -121,7 +131,7 @@ export default function ChatScreen({ route }) {
             {...props}
             wrapperStyle={{
                   left: {
-                    backgroundColor: '#222222',
+                    backgroundColor: '#20190e',
                   },
                 }}
             textProps={{
@@ -175,7 +185,7 @@ export default function ChatScreen({ route }) {
           <InputToolbar
               {...props}
                   containerStyle={{
-                    backgroundColor: "#333333",
+                    backgroundColor: "#30291e",
                     borderTopColor: "#dddddd",
                     borderTopWidth: 1,
                     padding: 1,
@@ -240,8 +250,9 @@ export default function ChatScreen({ route }) {
 //                                  onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
 //                                }
   return (
-    <View style={{ backgroundColor: "#222222", flex: 1, display: "flex",}}>
+    <View style={{ backgroundColor: "#20190e", flex: 1, display: "flex",}}>
       <GiftedChat
+          isTyping={processing}
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
           onQuickReply={reply => handleQuickReply(reply)}
           onSend={messages => handleSend(messages)}
@@ -275,19 +286,19 @@ export default function ChatScreen({ route }) {
 //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
 //<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
 function mapMessage(message) {
-  //console.log("Map message for gifted",message);
-  mappedMsg={}
-  mappedMsg["_id"] = message.id
-  mappedMsg["text"] = message.body
-  mappedMsg["createdAt"] = new Date(message.createdTime)
-  mappedMsg["user"] = mapUser(message.user)
-  if(message["quickReplies"]) {
+    //console.log("Map message for gifted",message);
+    mappedMsg={}
+    mappedMsg["_id"] = message.id
+    mappedMsg["text"] = message.body
+    mappedMsg["createdAt"] = new Date(message.createdTime)
+    mappedMsg["user"] = mapUser(message.user)
+    if(message["quickReplies"]) {
       mappedMsg["quickReplies"] = message["quickReplies"]
-  }
-  mappedMsg["type"] = message.type
-  if(message["system"]) {
+    }
+    mappedMsg["type"] = message.type
+    if(message["system"]) {
       mappedMsg["system"] = message.system
-  }
+    }
     //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
     // You can also add a video prop:
     //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',

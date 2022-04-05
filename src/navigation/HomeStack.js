@@ -13,6 +13,7 @@ const ModalStack = createStackNavigator();
 //green #1c9963
 //yellow #e69138
 //purple #5b3a70
+//glowingblack #312a1f
 
 export default function HomeStack() {
   return (
@@ -28,7 +29,7 @@ function ChatComponent() {
       <ChatStack.Navigator
           screenOptions={{
             headerStyle: {
-              backgroundColor: '#e69138',
+              backgroundColor: '#20190e',
             },
             headerTintColor: '#eeeeee',
             headerTitleStyle: {
