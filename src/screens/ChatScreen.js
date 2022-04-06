@@ -7,7 +7,7 @@ import { useInterval } from 'usehooks-ts'
 import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
     getFakePromiseAsync, getMessagesSince, getQuickReplyResultMessage, getUser, isDemo, isProcessing,
     processQuickReply,
-    PROMPT_PUBLISH_MSG_TYPE, sendMessage, sendMessages, startChatSession,
+    PROMPT_PUBLISH_MSG_TYPE, PUBLISHED_TO_PRISM, sendMessage, sendMessages, startChatSession,
     STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import { AuthContext } from '../navigation/AuthProvider';
@@ -18,17 +18,13 @@ import emojiUtils from 'emoji-utils';
 import SlackMessage from '../components/SlackMessage';
 
 export default function ChatScreen({ route }) {
-  //useContext(AuthContext)
-//  {id: "esteban",
-//                      displayName: "Essbante",
-//                      displayPictureUrl:"https://lh5.googleusercontent.com/iob7iL2ixIzrP24PvQVJjpnmt3M2HvJIS7E3mIg2qWRMIJIlnIo27qjAS4XL9tC3ZwhZ78sbpwygbK2hDjx-8z2u_WaunTLxpEFgHJngBljvF8VvJ3QoAiyVfjEmthEEWQ=w1280",
-//                      }
 //  const [ user, setUser ] = useState(user);
     const { channel } = route.params;
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
     const [processing, setProcessing] = useState(false)
+    const [showSystem, setShowSystem] = useState(false)
 
     useEffect(() => {
         const chatSession = startChatSession({
@@ -91,6 +87,15 @@ export default function ChatScreen({ route }) {
         console.log("Checked Processing")
     }, [processing]);
 
+    useEffect(() => {
+            console.log("Show system")
+            getAllMessages(channel)
+                    .then((result) => {
+                        setMessages(result.paginator.items.map(mapMessage));
+                        setLoading(false);
+                    });
+    }, [showSystem]);
+
 //    if(isDemo) {
 //        // polling to generate credential
 //        useInterval(async () => {
@@ -134,11 +139,6 @@ export default function ChatScreen({ route }) {
                     backgroundColor: '#20190e',
                   },
                 }}
-            textProps={{
-                style: {
-                  color: props.position === 'left' ? '#fff' : '#000',
-                },
-            }}
             textStyle={{
                 left: {
                   color: '#fff',
@@ -147,6 +147,11 @@ export default function ChatScreen({ route }) {
                   color: '#000',
                 },
             }}
+//            textProps={{
+//                            style: {
+//                              color: props.position === 'left' ? '#fff' : '#000',
+//                            },
+//                        }}
         />
     );
   }
@@ -249,6 +254,11 @@ export default function ChatScreen({ route }) {
 //                                  style: styles.bigBlue,
 //                                  onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
 //                                }
+//                  {
+//                    pattern: /#(\w+)/,
+//                    style: styles.url,
+//                    onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
+//                  },
   return (
     <View style={{ backgroundColor: "#20190e", flex: 1, display: "flex",}}>
       <GiftedChat
@@ -258,20 +268,17 @@ export default function ChatScreen({ route }) {
           onSend={messages => handleSend(messages)}
           parsePatterns={(linkStyle) => [
                   {
-                    pattern: /#(\w+)/,
-                    style: styles.hashtag,
-                    onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
-                  },
-                  {
                       pattern: /published to Prism/,
-                      style: styles.url,
-                      onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
-                  }
+                      style: styles.prism,
+                      onPress: (tag) => setShowSystem(!showSystem),
+                  },
+                  //{type: 'url', style: styles.url, onPress: onUrlPress},
                 ]}
 
           renderInputToolbar={props => renderInputToolbar(props)}
           renderAllAvatars={true}
           renderAvatarOnTop={true}
+          renderBubble={renderBubble}
           renderUsernameOnMessage={true}
           showAvatarForEveryMessage={true}
           user={mapUser(getUser(channel.id))}
@@ -281,63 +288,68 @@ export default function ChatScreen({ route }) {
       }
     </View>
   );
-}
 
-//,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
-//<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
-function mapMessage(message) {
-    //console.log("Map message for gifted",message);
-    mappedMsg={}
-    mappedMsg["_id"] = message.id
-    mappedMsg["text"] = message.body
-    mappedMsg["createdAt"] = new Date(message.createdTime)
-    mappedMsg["user"] = mapUser(message.user)
-    if(message["quickReplies"]) {
-      mappedMsg["quickReplies"] = message["quickReplies"]
-    }
-    mappedMsg["type"] = message.type
-    if(message["system"]) {
-      mappedMsg["system"] = message.system
-    }
-    //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
-    // You can also add a video prop:
-    //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    // Mark the message as sent, using one tick
-    //sent: true,
-    // Mark the message as received, using two tick
-    //received: true,
-    // Mark the message as pending with a clock loader
-    //pending: true,
-    // Any additional custom parameters are passed through
-  return mappedMsg;
-}
+  //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
+  //<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
+  function mapMessage(message) {
+      //console.log("Map message for gifted",message);
+      mappedMsg={}
+      mappedMsg["_id"] = message.id
+      mappedMsg["text"] = message.body
+      mappedMsg["createdAt"] = new Date(message.createdTime)
+      mappedMsg["user"] = mapUser(message.user)
+      if(message["quickReplies"]) {
+        mappedMsg["quickReplies"] = message["quickReplies"]
+      }
+      mappedMsg["type"] = message.type
+      if(message["system"]) {
+        mappedMsg["system"] = (message.system)
+        if(!showSystem) {
+            mappedMsg["text"] = "more details available"
+        }
+      }
+      //image: 'https://www.google.com/images/branding/googlelogo/1x/googlelogo_light_color_272x92dp.png',
+      // You can also add a video prop:
+      //video: 'http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      // Mark the message as sent, using one tick
+      //sent: true,
+      // Mark the message as received, using two tick
+      //received: true,
+      // Mark the message as pending with a clock loader
+      //pending: true,
+      // Any additional custom parameters are passed through
+    return mappedMsg;
+  }
 
-function mapUser(user) {
-  //console.log("Map User for gifted",user);
-  return {
-    _id: user.id,
-    name: user.displayName,
-    avatar: user.displayPictureUrl,
-  };
+  function mapUser(user) {
+    //console.log("Map User for gifted",user);
+    return {
+      _id: user.id,
+      name: user.displayName,
+      avatar: user.displayPictureUrl,
+    };
+  }
 }
 
 const styles = StyleSheet.create({
-  videoContainer: {
-    marginTop: 50,
-  },
-  bigBlue: {
-    color: 'blue',
-    fontWeight: 'bold',
-    fontSize: 30,
-  },
-  red: {
-    color: 'red',
-  },
+    videoContainer: {
+        marginTop: 50,
+    },
+    bigBlue: {
+        color: 'blue',
+        fontWeight: 'bold',
+        fontSize: 30,
+    },
+    red: {
+        color: 'red',
+    },
+    prism: {
+      color: 'red',
+    },
     url: {
       color: 'red',
       textDecorationLine: 'underline',
     },
-
     email: {
       textDecorationLine: 'underline',
     },

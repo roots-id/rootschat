@@ -1,5 +1,6 @@
 import uuid from 'react-native-uuid';
 import { addChannel,addMessage,createUserDisplay,DID_ALIAS,DID_URI_LONG_FORM,getChannels,
+    getCredRequests,
     getMessages,getUserDisplay,getWallet,logger, newChannel,saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
@@ -12,6 +13,7 @@ export const rootsLogo = rwLogo;
 export const personLogo = perLogo;
 export const prismLogo = apLogo;
 
+//msg types
 export const BLOCKCHAIN_URI_MSG_TYPE = "blockchainUri";
 export const CREDENTIAL_JSON_MSG_TYPE = "jsonCredential";
 export const DID_JSON_MSG_TYPE = "jsonDid";
@@ -22,7 +24,14 @@ export const PRISM_LINK_MSG_TYPE = "prismLink"
 export const STATUS_MSG_TYPE = "status";
 export const TEXT_MSG_TYPE = "text"
 
+//meaniful literals
 export const ACHIEVEMENT_MSG_PREFIX = "You have a new achievement: ";
+export const PUBLISHED_TO_PRISM = "published to Prism"
+
+//state literals
+export const CRED_ACCEPTED = "credAccepted"
+export const CRED_REJECTED = "credRejected"
+export const CRED_SENT = "credSent"
 
 const ID_SEPARATOR = "_"
 
@@ -58,18 +67,22 @@ function getWalletJson() {
 //------------------ Channels (DIDs) --------------
 //TODO log public DIDs and/or create Pairwise DIDs
 export function createChannel (channelName,titlePrefix) {
-    logger("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
     if(!getWallet()) {
         createWallet("testWallet","","testPassphrase");
     }
-    saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),channelName)))
-    const newDid = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1];
-    createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
-    let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
-    sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-    sendMessage(newCh,"Would you like to publish this channel to Prism?",
-        PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
-    return newCh
+    if(!getDid(channelName)) {
+        logger("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
+        saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),channelName)))
+        const newDid = getDid(channelName);
+        createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
+        let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
+        sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+        sendMessage(newCh,"Would you like to publish this channel to Prism?",
+            PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
+        return newCh
+    } else {
+        logger("Channel already exists",channelName)
+    }
 }
 
 
@@ -100,13 +113,23 @@ export function getChannelDisplayName(channel) {
 }
 
 function getDid(didAlias) {
-    return getWallet()[WALLET_DIDS].filter(did => {
-        if(did["alias"] === didAlias) {
-            return true;
+    if(getWallet()[WALLET_DIDS]) {
+        const dids = getWallet()[WALLET_DIDS].filter(did => {
+            if(did["alias"] === didAlias) {
+                return true;
+            } else {
+                return false;
+            }
+        });
+        if(dids.length > 0) {
+            return dids[0]
         } else {
-            return false;
+            logger("Couldn't find DID",didAlias)
         }
-    });
+    } else {
+        logger("Couldn't find DID, wallet has no DIDs.")
+    }
+    return;
 }
 
 export async function publishChannel(channel) {
@@ -116,19 +139,17 @@ export async function publishChannel(channel) {
         const newWalJson = await PrismModule.publishDid(getWalletJson(), channel.id)
         const wallet = JSON.parse(newWalJson)
         channel["published"]=true
-        channel["title"]="🔗"+channel.title
+        channel["title"]=channel.title+"🔗"
         isProcessing(false)
     } else {
-        logger(channel.id,"is already published to Prism")
+        logger(channel.id,"is already",PUBLISHED_TO_PRISM)
     }
     return channel
 }
 
 // ---------------- Messages  ----------------------
 function addMessageExtensions(msg) {
-    if(msg.type === PROMPT_PUBLISH_MSG_TYPE) {
-        msg = addQuickReply(msg)
-    }
+    msg = addQuickReply(msg)
     return msg
 }
 
@@ -204,7 +225,7 @@ function addQuickReply(msg) {
     }
     if(msg.type === PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE) {
         msg["quickReplies"] = {type: 'checkbox',keepIt: true,
-            values: [{title: 'Yes',value: PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,}],
+            values: [{title: 'Yes',value: PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE+CRED_ACCEPTED,},{title: 'No Thx!',value: PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE+CRED_REJECTED}],
         }
     }
     return msg
@@ -214,20 +235,38 @@ export async function processQuickReply(channel,reply) {
     logger("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
     const msgs = []
     if(reply && channel) {
-        if(reply[0]["value"] === PROMPT_PUBLISH_MSG_TYPE) {
+        const value = reply[0]["value"];
+        if(value === PROMPT_PUBLISH_MSG_TYPE) {
             const pubChan = await publishChannel(channel);
-            await sendMessage(pubChan,pubChan.id+" published to Prism.",
+            await sendMessage(pubChan,pubChan.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
                     TEXT_MSG_TYPE,getUserDisplay(PRISM_BOT))
-            await sendMessage(channel,JSON.stringify(getDid(channel.id)),DID_JSON_MSG_TYPE,getUserDisplay(PRISM_BOT),true);
-            await sendMessage(channel,
-                "https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-                BLOCKCHAIN_URI_MSG_TYPE,
-                getUserDisplay(PRISM_BOT),true);
-            if(demo) {
+            const sentDid = await sendMessage(channel,JSON.stringify(getDid(channel.id)),DID_JSON_MSG_TYPE,getUserDisplay(PRISM_BOT),true);
+//            await sendMessage(channel,
+//                ,
+//                BLOCKCHAIN_URI_MSG_TYPE,
+//                getUserDisplay(PRISM_BOT),true);
+            if(demo && sentDid) {
+                sendMessage(channel,
+                    "You published your channel to Prism!",
+                    STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
                 createDemoCredential(channel)
             }
-        } else {
-            logger("reply value was",reply[0]["value"])
+        } else if(value.startsWith(PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE)) {
+            const credAlias = getCredentialAlias(channel.id)
+            const status = getCredRequests()[credAlias]
+            if(!status) {
+                logger("Could not find your credential request for",credAlias)
+            } else {
+                if(value.search(CRED_ACCEPTED) >= 0) {
+                    getCredRequests()[credAlias]=CRED_ACCEPTED
+                } else {
+                    getCredRequests()[credAlias]=CRED_REJECTED
+                }
+                createDemoCredential(channel)
+            }
+        }
+         else {
+            logger("reply value not recognized, was",reply[0]["value"])
         }
     } else {
         logger("reply",reply,"or channel",channel,"were undefined")
@@ -243,7 +282,7 @@ async function createCredential(channel,cred) {
     const newWalJson = await PrismModule.issueCred(getWalletJson(), channel.id, credJson);
     saveWallet(JSON.parse(newWalJson))
 
-    await sendMessage(channel,"You have been issued a new credential!",
+    await sendMessage(channel,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
           STATUS_MSG_TYPE,
           getUserDisplay(ROOTS_BOT))
     await sendMessage(channel,JSON.stringify(getCredential(cred.alias)),
@@ -375,32 +414,40 @@ export function createDemoCredential(channel) {
     const credMsgs = []
     const credAlias = getCredentialAlias(channel.id)
     if(channel["published"] && !getCredential(credAlias)) {
-        const didLong = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1][DID_URI_LONG_FORM]
-        logger("Creating demo credential for channel",channel.id,"w/long form did",didLong)
-        const cred = {
-            alias: credAlias,
-            issuingDidAlias: channel.id,
-            claim: {
-                content: "{\"name\": \"RootsWallet\",\"degree\": \"law\",\"date\": \"2022-04-04 09:10:04\"}",
-                subjectDid: didLong,
-            },
-            verifiedCredential: {
-                encodedSignedCredential: "",
-                proof: {
-                    hash: "",
-                    index: -1,
-                    siblings: [],
+        if(!getCredRequests()[credAlias]) {
+            getCredRequests()[credAlias]=CRED_SENT;
+            sendMessage(channel,
+                "To celebrate your publishing achievement, can we send you a verifiable credential?",
+                PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+        } else if (getCredRequests()[credAlias] === CRED_REJECTED) {
+            sendMessage(channel,
+                "No problem! Your identity wallet is under your control.",
+                STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+        } else if (getCredRequests()[credAlias] === CRED_ACCEPTED) {
+            const didLong = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1][DID_URI_LONG_FORM]
+            logger("Creating demo credential for channel",channel.id,"w/long form did",didLong)
+            const cred = {
+                alias: credAlias,
+                issuingDidAlias: channel.id,
+                claim: {
+                    content: "{\"name\": \"RootsWallet\",\"degree\": \"law\",\"date\": \"2022-04-04 09:10:04\"}",
+                    subjectDid: didLong,
                 },
-            },
-            batchId: "",
-            credentialHash: "",
-            operationHash: "",
-            revoked: false,
+                verifiedCredential: {
+                    encodedSignedCredential: "",
+                    proof: {
+                        hash: "",
+                        index: -1,
+                        siblings: [],
+                    },
+                },
+                batchId: "",
+                credentialHash: "",
+                operationHash: "",
+                revoked: false,
+            }
+            createCredential(channel,cred)
         }
-        createCredential(channel,cred)
-        sendMessage(channel,
-            "For publishing your channel to Prism, we are issuing you a congratulatory credential :)",
-            STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
 //        sendMessage(channel,"Valid credential",
 //                      STATUS_MSG_TYPE,
 //                      getUserDisplay(ROOTS_BOT))

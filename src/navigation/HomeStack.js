@@ -38,21 +38,21 @@ function ChatComponent() {
           }}
       >
         <ChatStack.Screen
-                    name="Secure Channels"
+                    name="Secure Channels:"
                     component={HomeScreen}
                     options={({ navigation }) => ({
                       headerRight: () => (
                           <IconButton
                               icon="plus"
                               size={28}
-                              color="#eeeeee"
+                              color="#e69138"
                               onPress={() => navigation.navigate('Create Secure Channel')}
                           />
                       ),
                     })}
                 />
         <ChatStack.Screen
-                    name="Secure Messages"
+                    name="Secure Messages:"
                     component={ChatScreen}
                     options={({ route }) => ({
                       title: route.params.channel.title,

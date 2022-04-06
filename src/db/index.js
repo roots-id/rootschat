@@ -7,6 +7,7 @@ const channels = []
 const messages = {}
 const userDisplays = {}
 const quickReplyResults = {}
+const credRequests = {}
 
 export function logger(...args) {
     if(args.length > 0) {
@@ -163,4 +164,8 @@ export function getQuickReplyResult(replyId) {
 export function addQuickReplyResult(replyId,result) {
     logger("Adding quick reply result",replyId,"=",result)
     quickReplyResults[replyId]=result
+}
+
+export function getCredRequests() {
+    return credRequests
 }

@@ -55,7 +55,7 @@ export default function HomeScreen({navigation}) {
                           titleStyle={styles.listTitle}
                           descriptionStyle={styles.listDescription}
                           descriptionNumberOfLines={1}
-                          onPress={() => navigation.navigate('Secure Messages', { channel: item })}
+                          onPress={() => navigation.navigate('Secure Messages:', { channel: item })}
                       />
                   )}
               />
