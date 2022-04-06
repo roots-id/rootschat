@@ -257,10 +257,14 @@ export async function processQuickReply(channel,reply) {
             if(!status) {
                 logger("Could not find your credential request for",credAlias)
             } else {
-                if(value.search(CRED_ACCEPTED) >= 0) {
+                if(value.endsWith(CRED_ACCEPTED)) {
                     getCredRequests()[credAlias]=CRED_ACCEPTED
-                } else {
+                    logger("Credential accepted",credAlias)
+                } else if (value.endsWith(CRED_REJECTED)) {
                     getCredRequests()[credAlias]=CRED_REJECTED
+                    logger("Credential rejected",credAlias)
+                } else {
+                    logger("Unknown credential prompt reply",value)
                 }
                 createDemoCredential(channel)
             }
