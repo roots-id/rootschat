@@ -4,22 +4,22 @@ import { FlatList, NativeModules, SafeAreaView, StyleSheet, View, Text } from 'r
 import { Divider, List } from 'react-native-paper';
 import FormButton from '../components/FormButton';
 
-import { getChannelDisplayName, getAllChannels } from '../roots';
+import { getChatDisplayName, getAllChats } from '../roots';
 import Loading from '../components/Loading';
 
 const PrismModule = NativeModules
 
 export default function HomeScreen({navigation}) {
-  const [channels, setChannels] = useState([]);
+  const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isFocused = useIsFocused();
 
   useEffect(() => {
     let isCancelled = false;
-    getAllChannels().then(result => {
+    getAllChats().then(result => {
       if (!isCancelled) {
-        setChannels(result.paginator.items);
+        setChats(result.paginator.items);
 
         if (loading) {
           setLoading(false);
@@ -45,7 +45,7 @@ export default function HomeScreen({navigation}) {
     <View style={styles.container}>
         <SafeAreaView style={styles.container}>
               <FlatList
-                  data={channels}
+                  data={chats}
                   keyExtractor={(item) => item.id.toString()}
                   ItemSeparatorComponent={() => <Divider />}
                   renderItem={({ item }) => (
@@ -55,7 +55,7 @@ export default function HomeScreen({navigation}) {
                           titleStyle={styles.listTitle}
                           descriptionStyle={styles.listDescription}
                           descriptionNumberOfLines={1}
-                          onPress={() => navigation.navigate('Secure Messages:', { channel: item })}
+                          onPress={() => navigation.navigate('Secure Messages:', { chat: item })}
                       />
                   )}
               />

@@ -2,8 +2,8 @@ export const DID_ALIAS = "alias";
 export const DID_URI_LONG_FORM = "uriLongForm"
 export const WALLET_DIDS = "dids";
 
-const channels = []
-//indexed by channel name
+const chats = []
+//indexed by chat name
 const messages = {}
 const userDisplays = {}
 const quickReplyResults = {}
@@ -102,39 +102,39 @@ export function getUserDisplay(userAlias) {
     return userDisplays[userAlias]
 }
 
-export function newChannel(didAlias, titlePrefix) {
-    logger('Creating a new channel',didAlias)
-    let channelJson = {
+export function newChat(didAlias, titlePrefix) {
+    logger('Creating a new chat',didAlias)
+    let chatJson = {
         id: didAlias,
         published: false,
         title: titlePrefix + didAlias,
         type: "DIRECT",
     };
-    addChannel(channelJson)
-    logger(didAlias,'channel created.')
-    return channelJson
+    addChat(chatJson)
+    logger(didAlias,'chat created.')
+    return chatJson
 }
 
-export function getChannels() {
-    return channels
+export function getChats() {
+    return chats
 }
 
-export function addChannel(channelJson) {
-    if(!channels.includes(channelJson.id)) {
-        channels.push(channelJson)
-        logger("Channel",channelJson.id,"added.")
+export function addChat(chatJson) {
+    if(!chats.includes(chatJson.id)) {
+        chats.push(chatJson)
+        logger("Chat",chatJson.id,"added.")
     } else {
-        logger("Channel",channelJson.id,"already exists.  Not adding")
+        logger("Chat",chatJson.id,"already exists.  Not adding")
     }
 }
 
-export function getMessages(channelId, startFromMsgId) {
-    if(!messages[channelId]) {
-        messages[channelId]=[]
+export function getMessages(chatId, startFromMsgId) {
+    if(!messages[chatId]) {
+        messages[chatId]=[]
     }
 
-    let chMsgs = messages[channelId]
-    logger("Getting channel",channelId,chMsgs.length,"messages")
+    let chMsgs = messages[chatId]
+    logger("Getting chat",chatId,chMsgs.length,"messages")
 
     if(startFromMsgId) {
         for(i = 0; i < chMsgs.length; i++) {
@@ -151,9 +151,9 @@ export function getMessages(channelId, startFromMsgId) {
     return chMsgs;
 }
 
-export function addMessage(channelId, message) {
-    logger("Adding",JSON.stringify(message),".... to channel",channelId)
-    messages[channelId].push(message)
+export function addMessage(chatId, message) {
+    logger("Adding",JSON.stringify(message),".... to chat",chatId)
+    messages[chatId].push(message)
 }
 
 export function getQuickReplyResult(replyId) {

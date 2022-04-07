@@ -3,25 +3,25 @@ import { NativeModules, StyleSheet, Text, View } from 'react-native';
 import { IconButton, Title } from 'react-native-paper';
 import { v4 as uuidv4 } from 'uuid';
 
-import { createChannel } from '../roots';
+import { createChat } from '../roots';
 import FormButton from '../components/FormButton';
 import FormInput from '../components/FormInput';
 
 const { PrismModule } = NativeModules;
 
-export default function CreateChannelScreen({ navigation }) {
-  const [channelName, setChannelName] = useState('');
+export default function CreateChatScreen({ navigation }) {
+  const [chatName, setChatName] = useState('');
   const [problemDisabled, setProblemDisabled] = useState(true)
 
   function handleButtonPress() {
-    if (channelName.length > 0) {
-      let channel = createChannel(channelName,"User Created - ")
-      if(channel) {
-          console.log("Created channel",channel)
+    if (chatName.length > 0) {
+      let chat = createChat(chatName,"User Created - ")
+      if(chat) {
+          console.log("Created chat",chat)
           setProblemDisabled(true)
-          navigation.navigate('Secure Channels:')
+          navigation.navigate('Secure Chats:')
       } else {
-          console.log("Could not create channel")
+          console.log("Could not create chat")
           setProblemDisabled(false)
       }
     }
@@ -38,20 +38,20 @@ export default function CreateChannelScreen({ navigation }) {
           />
         </View>
         <View style={styles.innerContainer}>
-          <Title style={styles.title}>Create a new channel</Title>
+          <Title style={styles.title}>Create a new chat</Title>
           <FormInput
-              labelName="Enter Channel Name"
-              value={channelName}
-              onChangeText={(text) => setChannelName(text)}
+              labelName="Enter Chat Name"
+              value={chatName}
+              onChangeText={(text) => setChatName(text)}
               clearButtonMode="while-editing"
           />
-          <Text disable={problemDisabled} style={displayProblem(problemDisabled)}>Could not create channel</Text>
+          <Text disable={problemDisabled} style={displayProblem(problemDisabled)}>Could not create chat</Text>
           <FormButton
               title="Create"
               modeValue="contained"
               labelStyle={styles.buttonLabel}
               onPress={() => handleButtonPress()}
-              disabled={channelName.length <= 0}
+              disabled={chatName.length <= 0}
           />
         </View>
       </View>

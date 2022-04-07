@@ -3,7 +3,7 @@ import React from 'react';
 import { IconButton, Title } from 'react-native-paper';
 
 import ChatScreen from '../screens/ChatScreen';
-import CreateChannelScreen from '../screens/CreateChannelScreen';
+import StartChatScreen from '../screens/StartChatScreen';
 import HomeScreen from '../screens/HomeScreen';
 
 const ChatStack = createStackNavigator();
@@ -19,7 +19,7 @@ export default function HomeStack() {
   return (
       <ModalStack.Navigator presentation="modal" headerShown="false">
         <ModalStack.Screen name="RootsWallet - Chat Prototype" component={ChatComponent} />
-        <ModalStack.Screen name="Create Secure Channel" component={CreateChannelScreen} />
+        <ModalStack.Screen name="Create Secure Chat" component={StartChatScreen} />
       </ModalStack.Navigator>
   );
 }
@@ -38,7 +38,7 @@ function ChatComponent() {
           }}
       >
         <ChatStack.Screen
-                    name="Secure Channels:"
+                    name="Secure Chats:"
                     component={HomeScreen}
                     options={({ navigation }) => ({
                       headerRight: () => (
@@ -46,7 +46,7 @@ function ChatComponent() {
                               icon="plus"
                               size={28}
                               color="#e69138"
-                              onPress={() => navigation.navigate('Create Secure Channel')}
+                              onPress={() => navigation.navigate('Create Secure Chat')}
                           />
                       ),
                     })}
@@ -55,7 +55,7 @@ function ChatComponent() {
                     name="Secure Messages:"
                     component={ChatScreen}
                     options={({ route }) => ({
-                      title: route.params.channel.title,
+                      title: route.params.chat.title,
                     })}
                 />
       </ChatStack.Navigator>

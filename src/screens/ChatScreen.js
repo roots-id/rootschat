@@ -19,7 +19,7 @@ import SlackMessage from '../components/SlackMessage';
 
 export default function ChatScreen({ route }) {
 //  const [ user, setUser ] = useState(user);
-    const { channel } = route.params;
+    const { chat } = route.params;
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
@@ -28,7 +28,7 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
         const chatSession = startChatSession({
-            channel: channel,
+            chat: chat,
             onReceivedMessage: (message) => {
                 setMessages((currentMessages) =>
                     GiftedChat.append(currentMessages, [mapMessage(message)])
@@ -58,8 +58,8 @@ export default function ChatScreen({ route }) {
             onMessageUpdated: (message) => {
              // handle message changes
             },
-            onChannelUpdated: (channel) => {
-             // handle channel changes
+            onChatUpdated: (chat) => {
+             // handle chat changes
             },
             onProcessing: (processing) => {
                 setProcessing(processing)
@@ -71,13 +71,13 @@ export default function ChatScreen({ route }) {
         if (chatSession.failed) {
             const error = chatSession.error; // Handle error
         }
-        getAllMessages(channel)
+        getAllMessages(chat)
         .then((result) => {
             setMessages(result.paginator.items.map(mapMessage));
             setLoading(false);
         });
         return chatSession.end;
-    }, [channel]);
+    }, [chat]);
 
     useEffect(() => {
         //console.log("Front-end messages updated")
@@ -89,7 +89,7 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
             console.log("Show system")
-            getAllMessages(channel)
+            getAllMessages(chat)
                     .then((result) => {
                         setMessages(result.paginator.items.map(mapMessage));
                         setLoading(false);
@@ -100,13 +100,13 @@ export default function ChatScreen({ route }) {
 //        // polling to generate credential
 //        useInterval(async () => {
 //            console.log("Polling to create credentials");
-//            setMadeCredential(createDemoCredential(channel,madeCredential))
+//            setMadeCredential(createDemoCredential(chat,madeCredential))
 //            if(madeCredential) {
 //                let pendingMsgs = []
 //                if(messages.length > 0) {
-//                    pendingMsgs = getMessagesSince(channel,messages[messages.length-1]["id"]).resolve()
+//                    pendingMsgs = getMessagesSince(chat,messages[messages.length-1]["id"]).resolve()
 //                } else {
-//                    pendingMsgs = getAllMessages(channel).resolve()
+//                    pendingMsgs = getAllMessages(chat).resolve()
 //                }
 //                await setMessages((prevMessages) =>
 //                    GiftedChat.append(prevMessages,pendingMsgs.map((pendingMsg) => mapMessage(pendingMsg))));
@@ -116,14 +116,14 @@ export default function ChatScreen({ route }) {
 //    }
 
     async function handleSend(pendingMsgs) {
-        const result = await sendMessages(channel, pendingMsgs, TEXT_MSG_TYPE, getUser(channel.id));
+        const result = await sendMessages(chat, pendingMsgs, TEXT_MSG_TYPE, getUser(chat.id));
 //        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMsgs));
     }
 
     //getFakePromiseAsync(10000);
-//processQuickReply(channel,reply)
+//processQuickReply(chat,reply)
     async function handleQuickReply(reply) {
-        const result = await processQuickReply(channel,reply)
+        const result = await processQuickReply(chat,reply)
         console.log("Quick Reply processing complete",result)
 //        await setMessages((prevMessages) =>
 //                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
@@ -281,7 +281,7 @@ export default function ChatScreen({ route }) {
           renderBubble={renderBubble}
           renderUsernameOnMessage={true}
           showAvatarForEveryMessage={true}
-          user={mapUser(getUser(channel.id))}
+          user={mapUser(getUser(chat.id))}
       />
       {
         Platform.OS === 'android' && <KeyboardAvoidingView behavior="padding" />

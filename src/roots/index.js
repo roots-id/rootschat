@@ -1,7 +1,7 @@
 import uuid from 'react-native-uuid';
-import { addChannel,addMessage,createUserDisplay,DID_ALIAS,DID_URI_LONG_FORM,getChannels,
+import { addChat,addMessage,createUserDisplay,DID_ALIAS,DID_URI_LONG_FORM,getChats,
     getCredRequests,
-    getMessages,getUserDisplay,getWallet,logger, newChannel,saveWallet,WALLET_DIDS } from '../db'
+    getMessages,getUserDisplay,getWallet,logger, newChat,saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
 import rwLogo from '../assets/RootsLogoAvatar.png'
@@ -37,12 +37,12 @@ const ID_SEPARATOR = "_"
 
 const ROOTS_BOT = "RootsWalletBot1"
 const PRISM_BOT = "PrismBot1"
-const BARTENDER_BOT = "BartenderBot1"
+const LIBRARY_BOT = "LibraryBot1"
 
 const demo = true;
 export const currentTime = new Date().getTime();
 
-const PUBLISHED_PRISM_CHANNEL_CREDENTIAL = "publishedPrismChannelCredential"
+const PUBLISHED_PRISM_CHAT_CREDENTIAL = "publishedPrismChatCredential"
 
 const handlers = {};
 const allProcessing = [];
@@ -64,51 +64,51 @@ function getWalletJson() {
     return walJson
 }
 
-//------------------ Channels (DIDs) --------------
+//------------------ Chats (DIDs) --------------
 //TODO log public DIDs and/or create Pairwise DIDs
-export function createChannel (channelName,titlePrefix) {
+export function createChat (chatName,titlePrefix) {
     if(!getWallet()) {
         createWallet("testWallet","","testPassphrase");
     }
-    if(!getDid(channelName)) {
-        logger("Creating channel",channelName,"w/ titlePrefix",titlePrefix)
-        saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),channelName)))
-        const newDid = getDid(channelName);
+    if(!getDid(chatName)) {
+        logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
+        saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),chatName)))
+        const newDid = getDid(chatName);
         createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
-        let newCh = newChannel(newDid[DID_ALIAS],titlePrefix)
+        let newCh = newChat(newDid[DID_ALIAS],titlePrefix)
         sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-        sendMessage(newCh,"Would you like to publish this channel to Prism?",
+        sendMessage(newCh,"Would you like to publish this chat to Prism?",
             PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
         return newCh
     } else {
-        logger("Channel already exists",channelName)
+        logger("Chat already exists",chatName)
     }
 }
 
 
 //TODO iterate to verify DID connections if cache is expired
-export function getAllChannels () {
-    if(getChannels().length == 0 && demo) {
+export function getAllChats () {
+    if(getChats().length == 0 && demo) {
         initializeDemo()
     }
 
-    getChannels().forEach(function (item, index) {
-      logger("getting channels",index+".",item.id);
+    getChats().forEach(function (item, index) {
+      logger("getting chats",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: getChannels()}};
+        let result = {paginator: {items: getChats()}};
         resolve(result);
     });
     return promise1;
 }
 
-export function getChannelDisplayName(channel) {
-  logger("getting channel display name " + channel);
-  if (channel.type === 'DIRECT') {
-    return channel.members.map((member) => member.displayName).join(', ');
+export function getChatDisplayName(chat) {
+  logger("getting chat display name " + chat);
+  if (chat.type === 'DIRECT') {
+    return chat.members.map((member) => member.displayName).join(', ');
   } else {
-    return channel.name;
+    return chat.name;
   }
 }
 
@@ -132,19 +132,19 @@ function getDid(didAlias) {
     return;
 }
 
-export async function publishChannel(channel) {
-    if(!channel["published"]) {
-        logger("Publishing DID",channel.id,"to Prism")
+export async function publishChat(chat) {
+    if(!chat["published"]) {
+        logger("Publishing DID",chat.id,"to Prism")
         isProcessing(true)
-        const newWalJson = await PrismModule.publishDid(getWalletJson(), channel.id)
+        const newWalJson = await PrismModule.publishDid(getWalletJson(), chat.id)
         const wallet = JSON.parse(newWalJson)
-        channel["published"]=true
-        channel["title"]=channel.title+"🔗"
+        chat["published"]=true
+        chat["title"]=chat.title+"🔗"
         isProcessing(false)
     } else {
-        logger(channel.id,"is already",PUBLISHED_TO_PRISM)
+        logger(chat.id,"is already",PUBLISHED_TO_PRISM)
     }
-    return channel
+    return chat
 }
 
 // ---------------- Messages  ----------------------
@@ -164,53 +164,53 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson,s
     }
 }
 
-function createMessageId(channelId,user,msgNum) {
-    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(channelId)+ID_SEPARATOR+String(msgNum);
+function createMessageId(chatId,user,msgNum) {
+    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(chatId)+ID_SEPARATOR+String(msgNum);
     logger("Generated msg id",msgId);
     return msgId;
 }
 
-export function getAllMessages(channel) {
-    logger("getting messages for channel",channel.id);
-    const channelMsgs = getMessages(channel.id)
-    channelMsgs.forEach(function (item, index) {
-      logger("channel",channel.title,"has message",index+".",item.id);
+export function getAllMessages(chat) {
+    logger("getting messages for chat",chat.id);
+    const chatMsgs = getMessages(chat.id)
+    chatMsgs.forEach(function (item, index) {
+      logger("chat",chat.title,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: channelMsgs}};
+        let result = {paginator: {items: chatMsgs}};
         resolve(result);
     });
     return promise1;
 }
 
-function getMessagesSince(channel,msgId) {
-    logger("getting messages for channel",channel.id,"since",msgId);
-    const channelMsgs = getMessages(channel.id,msgId)
-    channelMsgs.forEach(function (item, index) {
-      logger("channel",channel.title,"has message",index+".",item.id);
+function getMessagesSince(chat,msgId) {
+    logger("getting messages for chat",chat.id,"since",msgId);
+    const chatMsgs = getMessages(chat.id,msgId)
+    chatMsgs.forEach(function (item, index) {
+      logger("chat",chat.title,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: channelMsgs}};
+        let result = {paginator: {items: chatMsgs}};
         resolve(result);
     });
     return promise1;
 }
 
 
-export async function sendMessages(channel,msgs,msgType,userDisplay) {
-    await Promise.all(msgs.map(msg => sendMessage(channel,msg.text,msgType,userDisplay)))
+export async function sendMessages(chat,msgs,msgType,userDisplay) {
+    await Promise.all(msgs.map(msg => sendMessage(chat,msg.text,msgType,userDisplay)))
 }
 
-export async function sendMessage(channel,msgText,msgType,userDisplay,system=false) {
-    logger("user",userDisplay.id,"sending",msgText,"to channel",channel.id);
-    let msgNum = getMessages(channel.id).length
-    let msgId = createMessageId(channel.id,userDisplay.id,msgNum);
+export async function sendMessage(chat,msgText,msgType,userDisplay,system=false) {
+    logger("user",userDisplay.id,"sending",msgText,"to chat",chat.id);
+    let msgNum = getMessages(chat.id).length
+    let msgId = createMessageId(chat.id,userDisplay.id,msgNum);
     let msgTime = new Date().getTime() + (msgNum%100)
     let msg = createMessage(msgId, msgText, msgType, msgTime, userDisplay,system);
     msg = addMessageExtensions(msg);
-    addMessage(channel.id,msg);
+    addMessage(chat.id,msg);
     if(handlers["onReceivedMessage"]) {
         handlers["onReceivedMessage"](msg)
     }
@@ -231,28 +231,28 @@ function addQuickReply(msg) {
     return msg
 }
 
-export async function processQuickReply(channel,reply) {
-    logger("Processing Quick Reply w/ channel",channel.id,"w/ reply",reply)
+export async function processQuickReply(chat,reply) {
+    logger("Processing Quick Reply w/ chat",chat.id,"w/ reply",reply)
     const msgs = []
-    if(reply && channel) {
+    if(reply && chat) {
         const value = reply[0]["value"];
         if(value === PROMPT_PUBLISH_MSG_TYPE) {
-            const pubChan = await publishChannel(channel);
-            await sendMessage(pubChan,pubChan.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+            const pubChat = await publishChat(chat);
+            await sendMessage(pubChat,pubChat.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
                     TEXT_MSG_TYPE,getUserDisplay(PRISM_BOT))
-            const sentDid = await sendMessage(channel,JSON.stringify(getDid(channel.id)),DID_JSON_MSG_TYPE,getUserDisplay(PRISM_BOT),true);
-//            await sendMessage(channel,
+            const sentDid = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserDisplay(PRISM_BOT),true);
+//            await sendMessage(chat,
 //                ,
 //                BLOCKCHAIN_URI_MSG_TYPE,
 //                getUserDisplay(PRISM_BOT),true);
             if(demo && sentDid) {
-                sendMessage(channel,
-                    "You published your channel to Prism!",
+                sendMessage(chat,
+                    "You published your chat to Prism!",
                     STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-                createDemoCredential(channel)
+                createDemoCredential(chat)
             }
         } else if(value.startsWith(PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE)) {
-            const credAlias = getCredentialAlias(channel.id)
+            const credAlias = getCredentialAlias(chat.id)
             const status = getCredRequests()[credAlias]
             if(!status) {
                 logger("Could not find your credential request for",credAlias)
@@ -266,30 +266,30 @@ export async function processQuickReply(channel,reply) {
                 } else {
                     logger("Unknown credential prompt reply",value)
                 }
-                createDemoCredential(channel)
+                createDemoCredential(chat)
             }
         }
          else {
             logger("reply value not recognized, was",reply[0]["value"])
         }
     } else {
-        logger("reply",reply,"or channel",channel,"were undefined")
+        logger("reply",reply,"or chat",chat,"were undefined")
     }
 }
 
 // ------------------ Credentials ----------
 
-async function createCredential(channel,cred) {
+async function createCredential(chat,cred) {
     const credJson = JSON.stringify(cred)
     logger("Sending credJson", credJson)
     isProcessing(true)
-    const newWalJson = await PrismModule.issueCred(getWalletJson(), channel.id, credJson);
+    const newWalJson = await PrismModule.issueCred(getWalletJson(), chat.id, credJson);
     saveWallet(JSON.parse(newWalJson))
 
-    await sendMessage(channel,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+    await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
           STATUS_MSG_TYPE,
           getUserDisplay(ROOTS_BOT))
-    await sendMessage(channel,JSON.stringify(getCredential(cred.alias)),
+    await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
         CREDENTIAL_JSON_MSG_TYPE,
         getUserDisplay(PRISM_BOT),true)
 
@@ -319,8 +319,8 @@ function getCredential(credAlias) {
     return;
 }
 
-function getCredentialAlias(channelId) {
-    return channelId + PUBLISHED_PRISM_CHANNEL_CREDENTIAL
+function getCredentialAlias(chatId) {
+    return chatId + PUBLISHED_PRISM_CHAT_CREDENTIAL
 }
 
 // ----------------- Polling ------------
@@ -331,7 +331,7 @@ function getCredentialAlias(channelId) {
 const sessionInfo={};
 const sessionState=[];
 export function startChatSession(sessionInfo) {
-    logger("starting session w/channel",sessionInfo["channel"]);
+    logger("starting session w/chat",sessionInfo["chat"]);
     if(sessionInfo["onReceivedMessage"]) {
         logger("setting onReceivedMessage")
         handlers["onReceivedMessage"] = sessionInfo["onReceivedMessage"]
@@ -394,8 +394,8 @@ function initDemoUserDisplays() {
                   "Atala Prism",
                   prismLogo)
     createUserDisplay(
-                  BARTENDER_BOT,
-                  "Bartender",
+                  LIBRARY_BOT,
+                  "Library",
                   personLogo)
 }
 
@@ -403,36 +403,37 @@ function initializeDemo() {
     initDemoUserDisplays()
     initDemoIntro()
     initDemoAchievements()
-    initDemoBartender()
+    initDemoLibrary()
+    initDemoResume()
 }
 
 function initDemoIntro() {
-    const channel = createChannel("Introduction Channel","Under Construction - ")
-//    sendMessage(channel,
+    const chat = createChat("Introduction Chat","Under Construction - ")
+//    sendMessage(chat,
 //        "system message",
 //        STATUS_MSG_TYPE,
 //        getUserDisplay(PRISM_BOT),true);
 }
 
-export function createDemoCredential(channel) {
+export function createDemoCredential(chat) {
     const credMsgs = []
-    const credAlias = getCredentialAlias(channel.id)
-    if(channel["published"] && !getCredential(credAlias)) {
+    const credAlias = getCredentialAlias(chat.id)
+    if(chat["published"] && !getCredential(credAlias)) {
         if(!getCredRequests()[credAlias]) {
             getCredRequests()[credAlias]=CRED_SENT;
-            sendMessage(channel,
+            sendMessage(chat,
                 "To celebrate your publishing achievement, can we send you a verifiable credential?",
                 PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDisplay(ROOTS_BOT))
         } else if (getCredRequests()[credAlias] === CRED_REJECTED) {
-            sendMessage(channel,
+            sendMessage(chat,
                 "No problem! Your identity wallet is under your control.",
                 STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
         } else if (getCredRequests()[credAlias] === CRED_ACCEPTED) {
             const didLong = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1][DID_URI_LONG_FORM]
-            logger("Creating demo credential for channel",channel.id,"w/long form did",didLong)
+            logger("Creating demo credential for chat",chat.id,"w/long form did",didLong)
             const cred = {
                 alias: credAlias,
-                issuingDidAlias: channel.id,
+                issuingDidAlias: chat.id,
                 claim: {
                     content: "{\"name\": \"RootsWallet\",\"degree\": \"law\",\"date\": \"2022-04-04 09:10:04\"}",
                     subjectDid: didLong,
@@ -450,26 +451,26 @@ export function createDemoCredential(channel) {
                 operationHash: "",
                 revoked: false,
             }
-            createCredential(channel,cred)
+            createCredential(chat,cred)
         }
-//        sendMessage(channel,"Valid credential",
+//        sendMessage(chat,"Valid credential",
 //                      STATUS_MSG_TYPE,
 //                      getUserDisplay(ROOTS_BOT))
 //
 //
-//        sendMessage(channel,"Credential imported",
+//        sendMessage(chat,"Credential imported",
 //                    STATUS_MSG_TYPE,
 //                    getUserDisplay(ROOTS_BOT))
-//        sendMessage(channel,"Valid credential.",
+//        sendMessage(chat,"Valid credential.",
 //                      STATUS_MSG_TYPE,
 //                      getUserDisplay(ROOTS_BOT))
-    //    sendMessage(channel,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+    //    sendMessage(chat,"https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
     //                 BLOCKCHAIN_URI_MSG_TYPE,
     //                 getUserDisplay(PRISM_BOT))
-//        sendMessage(channel,"Credential revoked",
+//        sendMessage(chat,"Credential revoked",
 //                      STATUS_MSG_TYPE,
 //                      getUserDisplay(ROOTS_BOT))
-//        sendMessage(channel,"Invalid credential.",
+//        sendMessage(chat,"Invalid credential.",
 //                    STATUS_MSG_TYPE,
 //                    getUserDisplay(ROOTS_BOT))
         return true;
@@ -478,7 +479,7 @@ export function createDemoCredential(channel) {
 }
 
 function initDemoAchievements() {
-    const achieveCh = createChannel("Achievement Channel","Under Construction - ")
+    const achieveCh = createChat("Achievement Chat","Under Construction - ")
 
     sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
       STATUS_MSG_TYPE,
@@ -494,8 +495,12 @@ function initDemoAchievements() {
       getUserDisplay(ROOTS_BOT))
 }
 
-function initDemoBartender() {
-    const bartendCh = createChannel("Bartender Channel","Coming Soon - ")
+function initDemoLibrary() {
+    const libraryCh = createChat("Library Chat","Coming Soon - ")
+}
+
+function initDemoResume() {
+    const resumeCh = createChat("Resume/CV Chat","Coming Soon - ")
 }
 
 export const walCliCommands=[
