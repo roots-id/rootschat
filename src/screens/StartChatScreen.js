@@ -19,7 +19,7 @@ export default function CreateChatScreen({ navigation }) {
       if(chat) {
           console.log("Created chat",chat)
           setProblemDisabled(true)
-          navigation.navigate('Secure Chats:')
+          navigation.navigate('Chats')
       } else {
           console.log("Could not create chat")
           setProblemDisabled(false)

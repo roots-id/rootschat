@@ -4,7 +4,7 @@ import { addChat,addMessage,createUserDisplay,DID_ALIAS,DID_URI_LONG_FORM,getCha
     getMessages,getUserDisplay,getWallet,logger, newChat,saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
-import rwLogo from '../assets/RootsLogoAvatar.png'
+import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
 import apLogo from '../assets/ATALAPRISM.png'
 //https://lh5.googleusercontent.com/bOG9vTJDA73jNwAtwm1ioc__Nr1Ch199Xo-4R9xFgJW_hsMsNwef2WQCwm-8_c9d3B8zF7vSEF5E-nLIMOOaZJlPz_dKAo-j_s102ddaNla0iiywfT2fAljxrsdrkxDllg=w1280
@@ -103,13 +103,15 @@ export function getAllChats () {
     return promise1;
 }
 
-export function getChatDisplayName(chat) {
-  logger("getting chat display name " + chat);
-  if (chat.type === 'DIRECT') {
-    return chat.members.map((member) => member.displayName).join(', ');
-  } else {
-    return chat.name;
-  }
+export function getChat(chatId) {
+    logger("getting chat " + chatId);
+    const chats = getChats().filter(chat => {if(chat.id === chatId){logger("chat found",chat.id);return true;}})
+    if(chats && chats.length>0) {
+        return chats[0]
+    } else {
+        logger("chat not found",chatId)
+    }
+    return;
 }
 
 function getDid(didAlias) {
@@ -170,11 +172,11 @@ function createMessageId(chatId,user,msgNum) {
     return msgId;
 }
 
-export function getAllMessages(chat) {
-    logger("getting messages for chat",chat.id);
-    const chatMsgs = getMessages(chat.id)
+export function getAllMessages(chatId) {
+    logger("getting messages for chat",chatId);
+    const chatMsgs = getMessages(chatId)
     chatMsgs.forEach(function (item, index) {
-      logger("chat",chat.title,"has message",index+".",item.id);
+      logger("chat",chatId,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
@@ -184,11 +186,11 @@ export function getAllMessages(chat) {
     return promise1;
 }
 
-function getMessagesSince(chat,msgId) {
-    logger("getting messages for chat",chat.id,"since",msgId);
-    const chatMsgs = getMessages(chat.id,msgId)
+function getMessagesSince(chatId,msgId) {
+    logger("getting messages for chat",chatId,"since",msgId);
+    const chatMsgs = getMessages(chatId,msgId)
     chatMsgs.forEach(function (item, index) {
-      logger("chat",chat.title,"has message",index+".",item.id);
+      logger("chat",chatId,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
@@ -331,7 +333,7 @@ function getCredentialAlias(chatId) {
 const sessionInfo={};
 const sessionState=[];
 export function startChatSession(sessionInfo) {
-    logger("starting session w/chat",sessionInfo["chat"]);
+    logger("starting session w/chat",sessionInfo["chat"].title);
     if(sessionInfo["onReceivedMessage"]) {
         logger("setting onReceivedMessage")
         handlers["onReceivedMessage"] = sessionInfo["onReceivedMessage"]

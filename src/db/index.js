@@ -11,7 +11,7 @@ const credRequests = {}
 
 export function logger(...args) {
     if(args.length > 0) {
-        console.log(...args.map(arg => String(arg).substring(0,150),"..."));
+        console.log("roots -",...args.map(arg => String(arg).substring(0,150),"..."));
     }
 }
 

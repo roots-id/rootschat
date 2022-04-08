@@ -3,9 +3,11 @@ import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendBut
 import { KeyboardAvoidingView, NativeModules, StyleSheet, Text, View } from 'react-native';
 import { Video, VideoPlayer } from 'react-native-video'
 import { useInterval } from 'usehooks-ts'
+//import { BarCodeScanner } from 'expo-barcode-scanner';
 
-import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages, getFakePromise,
-    getFakePromiseAsync, getMessagesSince, getQuickReplyResultMessage, getUser, isDemo, isProcessing,
+import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages,
+    getChat, getFakePromise,
+    getFakePromiseAsync, getQuickReplyResultMessage, getUser, isDemo, isProcessing,
     processQuickReply,
     PROMPT_PUBLISH_MSG_TYPE, PUBLISHED_TO_PRISM, sendMessage, sendMessages, startChatSession,
     STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
@@ -18,12 +20,15 @@ import emojiUtils from 'emoji-utils';
 import SlackMessage from '../components/SlackMessage';
 
 export default function ChatScreen({ route }) {
+    console.log("route params",route.params)
 //  const [ user, setUser ] = useState(user);
-    const { chat } = route.params;
-    const [messages, setMessages] = useState([]);
+    const chat = getChat(route.params.chatId);
+//    const [hasPermission, setHasPermission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
+    const [messages, setMessages] = useState([]);
     const [processing, setProcessing] = useState(false)
+//    const [scanned, setScanned] = useState(false);
     const [showSystem, setShowSystem] = useState(false)
 
     useEffect(() => {
@@ -71,7 +76,7 @@ export default function ChatScreen({ route }) {
         if (chatSession.failed) {
             const error = chatSession.error; // Handle error
         }
-        getAllMessages(chat)
+        getAllMessages(chat.id)
         .then((result) => {
             setMessages(result.paginator.items.map(mapMessage));
             setLoading(false);
@@ -89,12 +94,35 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
             console.log("Show system")
-            getAllMessages(chat)
+            getAllMessages(chat.id)
                     .then((result) => {
                         setMessages(result.paginator.items.map(mapMessage));
                         setLoading(false);
                     });
     }, [showSystem]);
+
+//    useEffect(() => {
+//        (async () => {
+//          const { status } = await BarCodeScanner.requestPermissionsAsync();
+//          setHasPermission(status === 'granted');
+//        })();
+//    }, []);
+//      const handleBarCodeScanned = ({ type, data }) => {
+//        setScanned(true);
+//        alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+//      };
+//
+//      if (hasPermission === null) {
+//        return <Text>Requesting for camera permission</Text>;
+//      }
+//      if (hasPermission === false) {
+//        return <Text>No access to camera</Text>;
+//      }
+//      <BarCodeScanner
+//          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+//          style={StyleSheet.absoluteFillObject}
+//        />
+//        {scanned && <Button title={'Tap to Scan Again'} onPress={() => setScanned(false)} />}
 
 //    if(isDemo) {
 //        // polling to generate credential
@@ -136,7 +164,7 @@ export default function ChatScreen({ route }) {
             {...props}
             wrapperStyle={{
                   left: {
-                    backgroundColor: '#20190e',
+                    backgroundColor: '#251520',
                   },
                 }}
             textStyle={{
@@ -190,7 +218,7 @@ export default function ChatScreen({ route }) {
           <InputToolbar
               {...props}
                   containerStyle={{
-                    backgroundColor: "#30291e",
+                    backgroundColor: "#302025",
                     borderTopColor: "#dddddd",
                     borderTopWidth: 1,
                     padding: 1,
@@ -260,7 +288,7 @@ export default function ChatScreen({ route }) {
 //                    onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
 //                  },
   return (
-    <View style={{ backgroundColor: "#20190e", flex: 1, display: "flex",}}>
+    <View style={{ backgroundColor: "#251520", flex: 1, display: "flex",}}>
       <GiftedChat
           isTyping={processing}
           messages={messages.sort((a, b) => b.createdAt - a.createdAt)}
@@ -283,11 +311,11 @@ export default function ChatScreen({ route }) {
           showAvatarForEveryMessage={true}
           user={mapUser(getUser(chat.id))}
       />
-      {
-        Platform.OS === 'android' && <KeyboardAvoidingView behavior="padding" />
-      }
     </View>
   );
+  //      {
+    //        Platform.OS === 'android' && <KeyboardAvoidingView behavior="padding" />
+    //      }
 
   //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
   //<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
