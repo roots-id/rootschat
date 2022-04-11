@@ -1,3 +1,5 @@
+import * as SecureStore from 'expo-secure-store';
+
 export const DID_ALIAS = "alias";
 export const DID_URI_LONG_FORM = "uriLongForm"
 export const WALLET_DIDS = "dids";
@@ -79,13 +81,27 @@ let wallet;
 //};
 
 export function getWallet() {
+    logger("db - Got wallet from cache",wallet)
     return wallet;
 }
 
-export function saveWallet(wal) {
-    console.debug("Saving wallet",JSON.stringify(wal),'...')
-    wallet = wal;
-    logger("Saved Wallet.")
+export async function restoreWallet(password) {
+    if(!wallet) {
+        wallet = JSON.parse(await SecureStore.getItemAsync(password));
+        logger("db - restored wallet from secure store",wallet)
+    } else {
+        logger("db - wallet already restored")
+    }
+}
+
+export async function saveWallet(wal) {
+    if(wal) {
+        const walJson = JSON.stringify(wal)
+        logger("Saving wallet",)
+        wallet = wal;
+        await SecureStore.setItemAsync(wal.passphrase,walJson);
+        logger("Saved Wallet.")
+    }
 }
 
 export function createUserDisplay(userAlias, userName, userPicUrl) {

@@ -1,7 +1,8 @@
 import uuid from 'react-native-uuid';
 import { addChat,addMessage,createUserDisplay,DID_ALIAS,DID_URI_LONG_FORM,getChats,
     getCredRequests,
-    getMessages,getUserDisplay,getWallet,logger, newChat,saveWallet,WALLET_DIDS } from '../db'
+    getMessages,getUserDisplay,getWallet,logger, newChat, restoreWallet,
+    saveWallet,WALLET_DIDS } from '../db'
 import PrismModule from '../prism'
 
 import rwLogo from '../assets/LogoOnly1024.png'
@@ -57,19 +58,34 @@ export function getUser(userId) {
 export function createWallet(walletName,mnemonic,passphrase) {
     saveWallet(JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase)))
     logger('Wallet created',getWalletJson())
+    return passphrase;
 }
+
+export async function loadWallet(password) {
+    logger("loading wallet with password",password);
+    const loadedWal = await restoreWallet(password);
+    logger("loaded wallet with password",loadedWal);
+    return loadedWal
+}
+
+export function hasWallet() {
+    const wallet = getWallet()
+    if(!wallet) {logger("Does not have wallet");return false;}
+    else{logger("Has wallet",wallet);return true;}
+ }
 
 function getWalletJson() {
     const walJson = JSON.stringify(getWallet())
     return walJson
 }
 
+export function getRootsWallet() {
+    logger("get roots wallet");
+    return getWallet()
+}
+
 //------------------ Chats (DIDs) --------------
-//TODO log public DIDs and/or create Pairwise DIDs
 export function createChat (chatName,titlePrefix) {
-    if(!getWallet()) {
-        createWallet("testWallet","","testPassphrase");
-    }
     if(!getDid(chatName)) {
         logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
         saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),chatName)))
@@ -324,10 +340,6 @@ function getCredential(credAlias) {
 function getCredentialAlias(chatId) {
     return chatId + PUBLISHED_PRISM_CHAT_CREDENTIAL
 }
-
-// ----------------- Polling ------------
-
-
 
 // ------------------ Session ---------------
 const sessionInfo={};

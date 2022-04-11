@@ -5,9 +5,11 @@ import { Title } from 'react-native-paper';
 import FormButton from '../components/FormButton';
 import FormInput from '../components/FormInput';
 
+import * as SecureStore from 'expo-secure-store';
+
 import AuthContext from '../context/AuthenticationContext';
 
-import { loadWallet } from '../roots'
+import { createWallet } from '../roots'
 
 //async function save(key, value) {
 //  await SecureStore.setItemAsync(key, value);
@@ -53,15 +55,17 @@ import { loadWallet } from '../roots'
 //
 //const styles = StyleSheet.create({ ... });
 
-export default function LoginScreen({ navigation }) {
+export default function CreateWalletScreen({ navigation }) {
+  const [mnemonic, setMnemonic] = useState('');
   const [password, setPassword] = useState('');
-  console.log("Has wallet, Logging in with password")
+  const [walletName, setWalletName] = useState('testWalletName');
+  console.log("CreateWalletScreen - Does not have wallet, createWalletScreen")
 
   const { signIn } = React.useContext(AuthContext);
 
   return (
       <View style={styles.container}>
-        <Title style={styles.titleText}>RootsWallet Login:</Title>
+        <Title style={styles.titleText}>Creating new wallet with password:</Title>
         <FormInput
             labelName="Password"
             value={password}
@@ -69,11 +73,11 @@ export default function LoginScreen({ navigation }) {
             onChangeText={(userPassword) => setPassword(userPassword)}
         />
         <FormButton
-            title="Login"
+            title="Create Wallet"
             modeValue="contained"
             labelStyle={styles.loginButtonLabel}
             onPress={() => {
-              const created = signIn(loadWallet(password));
+              const created = signIn(createWallet(walletName,mnemonic,password));
             }}
         />
       </View>

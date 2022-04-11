@@ -122,11 +122,10 @@ function LogoTitle(...props) {
   return (
     <React.Fragment>
         <View style={{flexDirection:'row',}}>
-        <Image
-          style={{ width: 50, height: 50 }}
-          source={require('../assets/LogoOnly1024.png')}
-        />
-
+            <Image
+              style={{ width: 50, height: 50 }}
+              source={require('../assets/LogoOnly1024.png')}
+            />
             <Text style={{ color: '#ff9138',fontSize: 22,fontWeight: 'normal',textAlignVertical: "center",textAlign: "center", }}>
                 {props[0]["title"]}
             </Text>

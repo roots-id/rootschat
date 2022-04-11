@@ -1,13 +1,14 @@
-import { NavigationContainer } from '@react-navigation/native';
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 
-import AuthStack from './AuthStack';
-import HomeStack from './HomeStack';
+import AuthStack from './AuthStack'
 
 export default function Routes() {
+  console.log("Routes - navigation/Routes")
+
   return (
       <NavigationContainer>
-        <HomeStack />
+        <AuthStack />
       </NavigationContainer>
   );
 }

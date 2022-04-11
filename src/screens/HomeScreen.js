@@ -13,20 +13,13 @@ export default function HomeScreen({navigation}) {
 
     const isFocused = useIsFocused();
 
-    useEffect(() => {
+    useEffect(async () => {
         let isCancelled = false;
-        getAllChats().then(result => {
-            if (!isCancelled) {
-                setChats(result.paginator.items);
-
-                if (loading) {
-                  setLoading(false);
-                }
-            }
-        });
-        return () => {
-            isCancelled = true;
-        };
+        const chatList = await getAllChats();
+        if (loading) {
+          setLoading(false);
+        }
+        setChats(chatList.paginator.items);
     }, [isFocused,loading]);
 
     if (loading) {

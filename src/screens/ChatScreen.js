@@ -12,7 +12,6 @@ import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE
     PROMPT_PUBLISH_MSG_TYPE, PUBLISHED_TO_PRISM, sendMessage, sendMessages, startChatSession,
     STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
-import { AuthContext } from '../navigation/AuthProvider';
 
 const { PrismModule } = NativeModules;
 
