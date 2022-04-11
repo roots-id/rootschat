@@ -1,4 +1,4 @@
-//import * as SecureStore from 'expo-secure-store';
+import * as SecureStore from 'expo-secure-store';
 import saveRealmWallet from './RealmWallet'
 
 export const DID_ALIAS = "alias";
@@ -27,7 +27,8 @@ export function getWallet() {
 
 export async function restoreWallet(password) {
     if(!wallet) {
-        //wallet = JSON.parse(await SecureStore.getItemAsync(password));
+        walletName = await SecureStore.getItemAsync(password);
+        wallet = getRealmWallet(password)
         logger("db - restored wallet from secure store",wallet)
     } else {
         logger("db - wallet already restored")
@@ -39,7 +40,8 @@ export async function saveWallet(wal) {
         const walJson = JSON.stringify(wal)
         logger("Saving wallet",)
         wallet = wal;
-        //await SecureStore.setItemAsync(wal.passphrase,walJson);
+        //save name for restoring wallet later
+        await SecureStore.setItemAsync(wal.passphrase,wal._id);
         saveRealmWallet(wal)
         logger("Saved Wallet.")
     }
