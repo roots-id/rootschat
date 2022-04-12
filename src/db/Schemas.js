@@ -102,7 +102,8 @@ export const WALLET_SCHEMA = {
     name: "Wallet",
     properties: {
         _id: "string",
-
+        mnemonic: "string[]",
+        passphrase: "string",
     },
     primaryKey: "_id",
 }

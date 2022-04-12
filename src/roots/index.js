@@ -55,23 +55,33 @@ export function getUser(userId) {
 }
 
 //----------------- Wallet ---------------------
-export function createWallet(walletName,mnemonic,passphrase) {
-    saveWallet(JSON.parse(PrismModule.newWal(walletName,mnemonic,passphrase)))
-    logger('Wallet created',getWalletJson())
-    return passphrase;
+export async function createWallet(walletName,mnemonic,passphrase) {
+    const result = saveWallet(PrismModule.newWal(walletName,mnemonic,passphrase))
+    if(result) {
+        logger('Wallet created',getWalletJson())
+        return result;
+    } else {
+        logger('Could not create wallet',walletName,passphrase)
+        return result;
+    }
 }
 
 export async function loadWallet(password) {
     logger("loading wallet with password",password);
     const loadedWal = await restoreWallet(password);
-    logger("loaded wallet with password",loadedWal);
-    return loadedWal
+    if(loadedWal) {
+        logger("loaded wallet with password",loadedWal);
+        return loadedWal
+    } else {
+        logger("could not load wallet with password",password)
+    }
+    return false
 }
 
 export function hasWallet() {
     const wallet = getWallet()
     if(!wallet) {logger("Does not have wallet");return false;}
-    else{logger("Has wallet",wallet);return true;}
+    else{logger("Has wallet",getWalletJson());return true;}
  }
 
 function getWalletJson() {
@@ -85,17 +95,23 @@ export function getRootsWallet() {
 }
 
 //------------------ Chats (DIDs) --------------
-export function createChat (chatName,titlePrefix) {
+export async function createChat (chatName,titlePrefix) {
     if(!getDid(chatName)) {
         logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
-        saveWallet(JSON.parse(PrismModule.newDID(getWalletJson(),chatName)))
-        const newDid = getDid(chatName);
-        createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
-        let newCh = newChat(newDid[DID_ALIAS],titlePrefix)
-        sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-        sendMessage(newCh,"Would you like to publish this chat to Prism?",
-            PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
-        return newCh
+        const prismWalletJson = PrismModule.newDID(getWalletJson(),chatName)
+        logger("Chat prismDid is", prismWalletJson)
+        const saveResult = await saveWallet(prismWalletJson)
+        if(saveResult) {
+            const newDid = getDid(chatName);
+            createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
+            let newCh = newChat(newDid[DID_ALIAS],titlePrefix)
+            sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+            sendMessage(newCh,"Would you like to publish this chat to Prism?",
+                PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
+            return newCh
+        } else{
+            logger("Could not create chat, saving wallet failed");
+        }
     } else {
         logger("Chat already exists",chatName)
     }
@@ -103,9 +119,9 @@ export function createChat (chatName,titlePrefix) {
 
 
 //TODO iterate to verify DID connections if cache is expired
-export function getAllChats () {
+export async function getAllChats () {
     if(getChats().length == 0 && demo) {
-        initializeDemo()
+        await initializeDemo()
     }
 
     getChats().forEach(function (item, index) {
@@ -143,11 +159,13 @@ function getDid(didAlias) {
             return dids[0]
         } else {
             logger("Couldn't find DID",didAlias)
+            return;
         }
     } else {
         logger("Couldn't find DID, wallet has no DIDs.")
+        return;
     }
-    return;
+
 }
 
 export async function publishChat(chat) {
@@ -302,15 +320,14 @@ async function createCredential(chat,cred) {
     logger("Sending credJson", credJson)
     isProcessing(true)
     const newWalJson = await PrismModule.issueCred(getWalletJson(), chat.id, credJson);
-    saveWallet(JSON.parse(newWalJson))
-
-    await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-          STATUS_MSG_TYPE,
-          getUserDisplay(ROOTS_BOT))
-    await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
-        CREDENTIAL_JSON_MSG_TYPE,
-        getUserDisplay(PRISM_BOT),true)
-
+    if(saveWallet(newWalJson)) {
+        await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+              STATUS_MSG_TYPE,
+              getUserDisplay(ROOTS_BOT))
+        await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
+            CREDENTIAL_JSON_MSG_TYPE,
+            getUserDisplay(PRISM_BOT),true)
+    }
     isProcessing(false)
 }
 
@@ -413,16 +430,16 @@ function initDemoUserDisplays() {
                   personLogo)
 }
 
-function initializeDemo() {
-    initDemoUserDisplays()
-    initDemoIntro()
-    initDemoAchievements()
-    initDemoLibrary()
-    initDemoResume()
+async function initializeDemo() {
+    await initDemoUserDisplays()
+    await initDemoIntro()
+    await initDemoAchievements()
+    await initDemoLibrary()
+    await initDemoResume()
 }
 
-function initDemoIntro() {
-    const chat = createChat("Introduction Chat","Under Construction - ")
+async function initDemoIntro() {
+    const chat = await createChat("Introduction Chat","Under Construction - ")
 //    sendMessage(chat,
 //        "system message",
 //        STATUS_MSG_TYPE,
@@ -492,8 +509,8 @@ export function createDemoCredential(chat) {
     return false;
 }
 
-function initDemoAchievements() {
-    const achieveCh = createChat("Achievement Chat","Under Construction - ")
+async function initDemoAchievements() {
+    const achieveCh = await createChat("Achievement Chat","Under Construction - ")
 
     sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
       STATUS_MSG_TYPE,
@@ -509,12 +526,12 @@ function initDemoAchievements() {
       getUserDisplay(ROOTS_BOT))
 }
 
-function initDemoLibrary() {
-    const libraryCh = createChat("Library Chat","Coming Soon - ")
+async function initDemoLibrary() {
+    const libraryCh = await createChat("Library Chat","Coming Soon - ")
 }
 
-function initDemoResume() {
-    const resumeCh = createChat("Resume/CV Chat","Coming Soon - ")
+async function initDemoResume() {
+    const resumeCh = await createChat("Resume/CV Chat","Coming Soon - ")
 }
 
 export const walCliCommands=[

@@ -1,5 +1,4 @@
 import * as SecureStore from 'expo-secure-store';
-import saveRealmWallet from './RealmWallet'
 
 export const DID_ALIAS = "alias";
 export const DID_URI_LONG_FORM = "uriLongForm"
@@ -21,29 +20,68 @@ export function logger(...args) {
 }
 
 export function getWallet() {
-    logger("db - Got wallet from cache",wallet)
+    logger("db - Got wallet from cache",JSON.stringify(wallet))
     return wallet;
 }
 
 export async function restoreWallet(password) {
-    if(!wallet) {
-        walletName = await SecureStore.getItemAsync(password);
-        wallet = getRealmWallet(password)
-        logger("db - restored wallet from secure store",wallet)
+    try {
+        walJson = await SecureStore.getItemAsync(password);
+        if(walJson) {
+            wallet = JSON.parse(walJson)
+            return true;
+        } else {
+            logger("db - No wallet found for password", password)
+        }
+    } catch (error) {
+        logger("db - getting wallet from secure store failed",error)
+        return false
+    }
+
+    return false
+}
+
+export async function saveWallet(walJson) {
+    logger("db - Saving wallet",walJson)
+    if(walJson && walJson.length > 0) {
+        try {
+            logger("db - Saving wallet to storage",walJson)
+            const wal = JSON.parse(walJson);
+            result = await storeWallet(wal.passphrase,walJson)
+            if(result) {
+                logger("db - successfully saved wallet",result)
+                wallet = wal;
+                return true;
+            } else {
+                logger("db - failed to save wallet", result)
+                return false;
+            }
+        } catch(error) {
+            logger("db - could not save wallet",walJson)
+        }
+        logger("db - Saved Wallet", result)
     } else {
-        logger("db - wallet already restored")
+        logger("db - Could not save wallet",walJson)
+        return false;
     }
 }
 
-export async function saveWallet(wal) {
-    if(wal) {
-        const walJson = JSON.stringify(wal)
-        logger("Saving wallet",)
-        wallet = wal;
-        //save name for restoring wallet later
-        await SecureStore.setItemAsync(wal.passphrase,wal._id);
-        saveRealmWallet(wal)
-        logger("Saved Wallet.")
+async function storeWallet(password,walJson) {
+    let errMsg = "db - can't store wallet w/"+password+" and wallet "+walJson+", ";
+    if(walJson) {
+        try {
+            logger('db - secure storing wallet')
+            await SecureStore.setItemAsync(password,walJson);
+            logger('db - secure stored wallet')
+            return true
+        } catch(error) {
+            errMsg += error.message
+            logger(errMsg)
+            return false;
+        }
+    } else {
+        logger(errMsg)
+        return false;
     }
 }
 

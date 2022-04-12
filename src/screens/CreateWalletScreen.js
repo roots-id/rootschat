@@ -59,7 +59,7 @@ export default function CreateWalletScreen({ navigation }) {
   const [mnemonic, setMnemonic] = useState('');
   const [password, setPassword] = useState('');
   const [walletName, setWalletName] = useState('testWalletName');
-  console.log("CreateWalletScreen - Does not have wallet, createWalletScreen")
+  console.log("CreateWalletScreen - creating wallet")
 
   const { signIn } = React.useContext(AuthContext);
 
@@ -76,8 +76,14 @@ export default function CreateWalletScreen({ navigation }) {
             title="Create Wallet"
             modeValue="contained"
             labelStyle={styles.loginButtonLabel}
-            onPress={() => {
-              const created = signIn(createWallet(walletName,mnemonic,password));
+            onPress={async () => {
+              const created = await createWallet(walletName,mnemonic,password);
+              if(created) {
+                console.log("CreateWalletScreen - Wallet created")
+                signIn(null);
+              } else {
+                console.log("CreateWalletScreen - Creating wallet failed");
+              }
             }}
         />
       </View>

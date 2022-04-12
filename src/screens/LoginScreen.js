@@ -55,7 +55,7 @@ import { loadWallet } from '../roots'
 
 export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
-  console.log("Has wallet, Logging in with password")
+  console.log("LoginScreen - Has wallet, Logging in with password")
 
   const { signIn } = React.useContext(AuthContext);
 
@@ -72,8 +72,15 @@ export default function LoginScreen({ navigation }) {
             title="Login"
             modeValue="contained"
             labelStyle={styles.loginButtonLabel}
-            onPress={() => {
-              const created = signIn(loadWallet(password));
+            onPress={async () => {
+              console.log("LoginScreen - Logging in with password")
+              const wal = await loadWallet(password)
+              if(wal) {
+                console.log("LoginScreen - login with password success")
+                signIn(wal);
+              } else {
+                console.log("LoginScreen - login with password failed")
+              }
             }}
         />
       </View>

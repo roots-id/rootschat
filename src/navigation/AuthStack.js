@@ -23,14 +23,14 @@ export default function AuthStack() {
       (prevState, action) => {
         switch (action.type) {
           case 'RESTORE_TOKEN':
-            console.log("AuthStack - RESTORE_TOKEN")
+            console.log("AuthStack - RESTORE_TOKEN w/ token", action.token)
             return {
               ...prevState,
               userToken: action.token,
               isLoading: false,
             };
           case 'SIGN_IN':
-            console.log("AuthStack - SIGN_IN")
+            console.log("AuthStack - SIGN_IN w/ token", action.token)
             return {
               ...prevState,
               userToken: action.token,
@@ -49,11 +49,11 @@ export default function AuthStack() {
         let userToken;
 
         try {
-          console.log("AuthStack - Retrieving wallet from secure store")
+          console.log("AuthStack - getting RootsWallet")
           userToken = getRootsWallet()
         } catch (e) {
           // Restoring token failed
-          console.log("AuthStack - Failed to restore wallet from secure store")
+          console.log("AuthStack - Failed to restore wallet from storage")
         }
 
         dispatch({ type: 'RESTORE_TOKEN', token: userToken });
@@ -64,8 +64,8 @@ export default function AuthStack() {
 
     const authContext = React.useMemo(
         () => ({
-          signIn: async (data) => {
-            dispatch({ type: 'SIGN_IN', token: loadWallet(data.password)});
+          signIn: (data) => {
+            dispatch({ type: 'SIGN_IN', token: data});
           }
         }),
         []
