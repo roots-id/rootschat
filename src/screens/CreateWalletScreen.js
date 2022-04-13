@@ -96,7 +96,7 @@ export default function CreateWalletScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#251520',
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
   titleText: {
     fontSize: 24,
     marginBottom: 10,
+    color: '#eeeeee',
   },
   loginButtonLabel: {
     fontSize: 22,

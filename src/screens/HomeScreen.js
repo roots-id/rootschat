@@ -15,10 +15,14 @@ export default function HomeScreen({navigation}) {
 
     useEffect(async () => {
         let isCancelled = false;
-        const chatList = await getAllChats();
-        if(chatList) {
-            setChats(chatList.paginator.items);
-            setLoading(false);
+        try {
+            const chatList = await getAllChats();
+            if(chatList) {
+                setChats(chatList.paginator.items);
+                setLoading(false);
+            }
+        } catch(error) {
+            console.log("HomeScreen - Could not getAllChats")
         }
     }, [isFocused,loading]);
 
