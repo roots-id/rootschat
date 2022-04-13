@@ -285,7 +285,7 @@ export async function processQuickReply(chat,reply) {
                 sendMessage(chat,
                     "You published your chat to Prism!",
                     STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
-                createDemoCredential(chat)
+                await createDemoCredential(chat)
             }
         } else if(value.startsWith(PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE)) {
             const credAlias = getCredentialAlias(chat.id)
@@ -296,13 +296,13 @@ export async function processQuickReply(chat,reply) {
                 if(value.endsWith(CRED_ACCEPTED)) {
                     getCredRequests()[credAlias]=CRED_ACCEPTED
                     logger("Credential accepted",credAlias)
+                    await createDemoCredential(chat)
                 } else if (value.endsWith(CRED_REJECTED)) {
                     getCredRequests()[credAlias]=CRED_REJECTED
                     logger("Credential rejected",credAlias)
                 } else {
                     logger("Unknown credential prompt reply",value)
                 }
-                createDemoCredential(chat)
             }
         }
          else {
@@ -320,13 +320,15 @@ async function createCredential(chat,cred) {
     logger("Sending credJson", credJson)
     isProcessing(true)
     const newWalJson = await PrismModule.issueCred(getWalletJson(), chat.id, credJson);
-    if(saveWallet(newWalJson)) {
+    const savedWal = await saveWallet(newWalJson)
+    if(savedWal) {
         await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
               STATUS_MSG_TYPE,
               getUserDisplay(ROOTS_BOT))
         await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
             CREDENTIAL_JSON_MSG_TYPE,
             getUserDisplay(PRISM_BOT),true)
+
     }
     isProcessing(false)
 }
@@ -446,7 +448,7 @@ async function initDemoIntro() {
 //        getUserDisplay(PRISM_BOT),true);
 }
 
-export function createDemoCredential(chat) {
+export async function createDemoCredential(chat) {
     const credMsgs = []
     const credAlias = getCredentialAlias(chat.id)
     if(chat["published"] && !getCredential(credAlias)) {
@@ -482,7 +484,7 @@ export function createDemoCredential(chat) {
                 operationHash: "",
                 revoked: false,
             }
-            createCredential(chat,cred)
+            await createCredential(chat,cred)
         }
 //        sendMessage(chat,"Valid credential",
 //                      STATUS_MSG_TYPE,

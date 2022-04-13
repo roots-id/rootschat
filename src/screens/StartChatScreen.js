@@ -13,9 +13,9 @@ export default function CreateChatScreen({ navigation }) {
   const [chatName, setChatName] = useState('');
   const [problemDisabled, setProblemDisabled] = useState(true)
 
-  function handleButtonPress() {
+  async function handleButtonPress() {
     if (chatName.length > 0) {
-      let chat = createChat(chatName,"User Created - ")
+      let chat = await createChat(chatName,"User Created - ")
       if(chat) {
           console.log("Created chat",chat)
           setProblemDisabled(true)
@@ -50,7 +50,7 @@ export default function CreateChatScreen({ navigation }) {
               title="Create"
               modeValue="contained"
               labelStyle={styles.buttonLabel}
-              onPress={() => handleButtonPress()}
+              onPress={async () => handleButtonPress()}
               disabled={chatName.length <= 0}
           />
         </View>
