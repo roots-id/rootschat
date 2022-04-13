@@ -1,3 +1,4 @@
+import * as AsyncWallet from './AsyncStoreWallet'
 import * as SecureStore from 'expo-secure-store';
 
 export const DID_ALIAS = "alias";
@@ -25,14 +26,20 @@ export function getWallet() {
     return wallet;
 }
 
-export async function restoreWallet(password) {
+export async function restoreWallet(passphrase) {
     try {
-        walJson = await SecureStore.getItemAsync(password);
-        if(walJson) {
-            wallet = JSON.parse(walJson)
-            return true;
-        } else {
-            logger("db - No wallet found for password", password)
+        //TODO use keychain for secrets, etc.
+        const walName = await SecureStore.getItemAsync(passphrase);
+        if(walName && walName !== null) {
+            const walJson = await AsyncWallet.getWallet(walName)
+            if(walJson) {
+                wallet = JSON.parse(walJson)
+                return true;
+            } else {
+                logger("db - No wallet found for walName", walName)
+            }
+        }else {
+            logger("db - No wallet found for passphrase", passphrase)
         }
     } catch (error) {
         logger("db - getting wallet from secure store failed",error)
@@ -47,8 +54,9 @@ export async function saveWallet(walJson) {
     if(walJson && walJson.length > 0) {
         try {
             logger("db - Saving wallet to storage",walJson)
+            //TODO use keychain to encrypt values
             const wal = JSON.parse(walJson);
-            result = await storeWallet(wal.passphrase,walJson)
+            result = await storeWallet(wal,walJson)
             if(result) {
                 logger("db - successfully saved wallet",result)
                 wallet = wal;
@@ -67,21 +75,24 @@ export async function saveWallet(walJson) {
     }
 }
 
-async function storeWallet(password,walJson) {
-    let errMsg = "db - can't store wallet w/"+password+" and wallet "+walJson+", ";
+async function storeWallet(wal,walJson) {
+    const errMsgs = [];
+    errMsgs.push("db - can't store wallet "+wal._id);
+    errMsgs.push("wallet "+walJson);
     if(walJson) {
         try {
             logger('db - secure storing wallet')
-            await SecureStore.setItemAsync(password,walJson);
+            await SecureStore.setItemAsync(wal.passphrase,wal._id);
+            await AsyncWallet.storeWallet(wal._id,walJson)
             logger('db - secure stored wallet')
             return true
         } catch(error) {
-            errMsg += error.message
-            logger(errMsg)
+            errMsgs.push(error.message)
+            logger(...errMsgs)
             return false;
         }
     } else {
-        logger(errMsg)
+        logger(...errMsgs)
         return false;
     }
 }

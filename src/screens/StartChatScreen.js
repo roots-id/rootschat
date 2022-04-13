@@ -15,7 +15,7 @@ export default function CreateChatScreen({ navigation }) {
 
   async function handleButtonPress() {
     if (chatName.length > 0) {
-      let chat = await createChat(chatName,"User Created - ")
+      const chat = await createChat(chatName,"User Created - ")
       if(chat) {
           console.log("Created chat",chat)
           setProblemDisabled(true)

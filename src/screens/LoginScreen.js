@@ -55,6 +55,7 @@ import { loadWallet } from '../roots'
 
 export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
+  const [problemDisabled, setProblemDisabled] = useState(true)
   console.log("LoginScreen - Has wallet, Logging in with password")
 
   const { signIn } = React.useContext(AuthContext);
@@ -68,6 +69,7 @@ export default function LoginScreen({ navigation }) {
             secureTextEntry={true}
             onChangeText={(userPassword) => setPassword(userPassword)}
         />
+        <Text disable={problemDisabled} style={displayProblem(problemDisabled)}>Login Failed</Text>
         <FormButton
             title="Login"
             modeValue="contained"
@@ -77,9 +79,11 @@ export default function LoginScreen({ navigation }) {
               const wal = await loadWallet(password)
               if(wal) {
                 console.log("LoginScreen - login with password success")
+                setProblemDisabled(true)
                 signIn(wal);
               } else {
                 console.log("LoginScreen - login with password failed")
+                setProblemDisabled(false)
               }
             }}
         />
@@ -104,4 +108,19 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: 16,
   },
+  none: {
+      display: 'none'
+  },
+  problem: {
+      color: 'red',
+  },
 });
+
+  function displayProblem(problemDisabled) {
+    if(problemDisabled){
+        return styles.none
+    }
+    else{
+        return styles.problem
+    }
+  }

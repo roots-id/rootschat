@@ -66,14 +66,14 @@ export async function createWallet(walletName,mnemonic,passphrase) {
     }
 }
 
-export async function loadWallet(password) {
-    logger("loading wallet with password",password);
-    const loadedWal = await restoreWallet(password);
+export async function loadWallet(passphrase) {
+    logger("loading wallet with passphrase",passphrase);
+    const loadedWal = await restoreWallet(passphrase);
     if(loadedWal) {
-        logger("loaded wallet with password",loadedWal);
+        logger("loaded wallet with passphrase",loadedWal);
         return loadedWal
     } else {
-        logger("could not load wallet with password",password)
+        logger("could not load wallet with passphrase",passphrase)
     }
     return false
 }
@@ -120,24 +120,17 @@ export async function createChat (chatName,titlePrefix) {
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
-    let ready = false
     if(getChats().length == 0 && demo) {
-        ready = await initializeDemo()
-    } else {
-        ready = true
+        await initializeDemo()
     }
-
-    if(ready) {
-        getChats().forEach(function (item, index) {
+    const promise1 = new Promise((resolve, reject) => {
+        let result = {paginator: {items: getChats()}};
+        result.paginator.items.forEach(function (item, index) {
           logger("getting chats",index+".",item.id);
         });
-
-        const promise1 = new Promise((resolve, reject) => {
-            let result = {paginator: {items: getChats()}};
-            resolve(result);
-        });
-        return promise1;
-    }
+        resolve(result);
+    });
+    return promise1;
 }
 
 export function getChat(chatId) {

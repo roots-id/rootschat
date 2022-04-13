@@ -59,6 +59,7 @@ export default function CreateWalletScreen({ navigation }) {
   const [mnemonic, setMnemonic] = useState('');
   const [password, setPassword] = useState('');
   const [walletName, setWalletName] = useState('testWalletName');
+  const [problemDisabled, setProblemDisabled] = useState(true)
   console.log("CreateWalletScreen - creating wallet")
 
   const { signIn } = React.useContext(AuthContext);
@@ -72,6 +73,7 @@ export default function CreateWalletScreen({ navigation }) {
             secureTextEntry={true}
             onChangeText={(userPassword) => setPassword(userPassword)}
         />
+        <Text disable={problemDisabled} style={displayProblem(problemDisabled)}>Could not create wallet</Text>
         <FormButton
             title="Create Wallet"
             modeValue="contained"
@@ -80,9 +82,11 @@ export default function CreateWalletScreen({ navigation }) {
               const created = await createWallet(walletName,mnemonic,password);
               if(created) {
                 console.log("CreateWalletScreen - Wallet created")
+                setProblemDisabled(true)
                 signIn(null);
               } else {
                 console.log("CreateWalletScreen - Creating wallet failed");
+                setProblemDisabled(false)
               }
             }}
         />
@@ -107,4 +111,19 @@ const styles = StyleSheet.create({
   navButtonText: {
     fontSize: 16,
   },
+  none: {
+      display: 'none'
+  },
+  problem: {
+    color: 'red',
+  },
 });
+
+function displayProblem(problemDisabled) {
+    if(problemDisabled){
+        return styles.none
+    }
+    else{
+        return styles.problem
+    }
+}

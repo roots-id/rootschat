@@ -24,7 +24,7 @@ export default function HomeScreen({navigation}) {
 
     if (loading) {
         return <Loading />;
-    }
+    } else {
 
     return (
         <View style={styles.container}>
@@ -47,6 +47,7 @@ export default function HomeScreen({navigation}) {
             </SafeAreaView>
         </View>
     );
+    }
 }
 
 const styles = StyleSheet.create({
