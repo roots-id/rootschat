@@ -99,7 +99,7 @@ export async function createChat (chatName,titlePrefix) {
     if(!getDid(chatName)) {
         logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
         const prismWalletJson = PrismModule.newDID(getWalletJson(),chatName)
-        logger("Chat prismDid is", prismWalletJson)
+        logger("Chat w/prismDid wallet", prismWalletJson)
         const saveResult = await saveWallet(prismWalletJson)
         if(saveResult) {
             const newDid = getDid(chatName);
@@ -120,19 +120,24 @@ export async function createChat (chatName,titlePrefix) {
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
+    let ready = false
     if(getChats().length == 0 && demo) {
-        await initializeDemo()
+        ready = await initializeDemo()
+    } else {
+        ready = true
     }
 
-    getChats().forEach(function (item, index) {
-      logger("getting chats",index+".",item.id);
-    });
+    if(ready) {
+        getChats().forEach(function (item, index) {
+          logger("getting chats",index+".",item.id);
+        });
 
-    const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: getChats()}};
-        resolve(result);
-    });
-    return promise1;
+        const promise1 = new Promise((resolve, reject) => {
+            let result = {paginator: {items: getChats()}};
+            resolve(result);
+        });
+        return promise1;
+    }
 }
 
 export function getChat(chatId) {
@@ -433,11 +438,13 @@ function initDemoUserDisplays() {
 }
 
 async function initializeDemo() {
-    await initDemoUserDisplays()
-    await initDemoIntro()
-    await initDemoAchievements()
-    await initDemoLibrary()
-    await initDemoResume()
+    const users = await initDemoUserDisplays()
+    const intro = await initDemoIntro()
+    const achievements = await initDemoAchievements()
+    const library = await initDemoLibrary()
+    const resume = await initDemoResume()
+    const result = true || (users && intro && achievements && library && resume)
+    return result;
 }
 
 async function initDemoIntro() {

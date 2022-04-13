@@ -16,10 +16,10 @@ export default function HomeScreen({navigation}) {
     useEffect(async () => {
         let isCancelled = false;
         const chatList = await getAllChats();
-        if (loading) {
-          setLoading(false);
+        if(chatList) {
+            setChats(chatList.paginator.items);
+            setLoading(false);
         }
-        setChats(chatList.paginator.items);
     }, [isFocused,loading]);
 
     if (loading) {

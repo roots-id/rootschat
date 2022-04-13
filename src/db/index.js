@@ -14,6 +14,7 @@ const credRequests = {}
 let wallet;
 
 export function logger(...args) {
+    //TODO divide long args and give samples
     if(args.length > 0) {
         console.log("roots -",...args.map(arg => String(arg).substring(0,150),"..."));
     }
