@@ -8,7 +8,7 @@ import FormInput from '../components/FormInput';
 import * as SecureStore from 'expo-secure-store';
 
 import AuthContext from '../context/AuthenticationContext';
-
+import {TEST_WALLET_NAME} from '../navigation/AuthStack';
 import { createWallet, storageStatus } from '../roots'
 
 //async function save(key, value) {
@@ -58,7 +58,7 @@ import { createWallet, storageStatus } from '../roots'
 export default function CreateWalletScreen({ navigation }) {
   const [mnemonic, setMnemonic] = useState('');
   const [password, setPassword] = useState('');
-  const [walletName, setWalletName] = useState('testWalletName');
+  const [walletName, setWalletName] = useState(TEST_WALLET_NAME);
   const [problemDisabled, setProblemDisabled] = useState(true)
   console.log("CreateWalletScreen - creating wallet")
 

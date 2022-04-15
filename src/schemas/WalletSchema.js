@@ -1,3 +1,7 @@
+export const DID_ALIAS = "alias";
+export const DID_URI_LONG_FORM = "uriLongForm"
+export const WALLET_DIDS = "dids";
+
 //const keyMaster0 =
 //{
 //    keyId: "master0",
@@ -38,10 +42,10 @@ export const KeyPair = {
 export const Did = {
     name: "Did",
     properties: {
-        alias: "string",
+        DID_ALIAS: "string",
         didIdx: "int",
         uriCanonical: "string",
-        uriLongForm: "string",
+        DID_URI_LONG_FORM: "string",
         operationHash: "string",
         keyPairs: "KeyPair[]",
     }
@@ -95,15 +99,15 @@ export const Credential = {
 
 //        mnemonic: "string[]",
 //        passphrase: "string",
-//        dids: "Did[]",
-//        importedCredentials: "Credential[]",
-//        issuedCredentials: "Credential[]",
 export const WALLET_SCHEMA = {
     name: "Wallet",
     properties: {
         _id: "string",
         mnemonic: "string[]",
         passphrase: "string",
+        WALLET_DIDS: "Did[]",
+        importedCredentials: "Credential[]",
+        issuedCredentials: "Credential[]",
     },
     primaryKey: "_id",
 }

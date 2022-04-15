@@ -1,3 +1,10 @@
-rm -Rf node_modules;yarn cache clean;yarn install
-yarn android
+#generate android folder before creating android studio project
 expo run:android
+
+#you should be able to run gradle builds from android studio, as well as via yarn android.
+
+#clear out yarn javascript modules
+rm -Rf node_modules;yarn cache clean;yarn install
+
+#rebuild and launch emulator
+yarn android

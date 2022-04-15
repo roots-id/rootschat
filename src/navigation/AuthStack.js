@@ -16,6 +16,7 @@ import StartChatScreen from '../screens/StartChatScreen';
 import { getChat, getRootsWallet, loadWallet, storageStatus, hasWallet } from '../roots'
 
 const Stack = createStackNavigator();
+export const TEST_WALLET_NAME = "testWalletName"
 
 export default function AuthStack() {
     console.log("AuthStack - Determining which auth screen to use.")
@@ -53,9 +54,11 @@ export default function AuthStack() {
         try {
           console.log("AuthStack - getting RootsWallet")
           await storageStatus()
-          setWalletFound(await hasWallet("testWalletName"))
+          //TODO ditch test wallet name
+          setWalletFound(await hasWallet(TEST_WALLET_NAME))
           if(walletFound) {
-            userToken = getRootsWallet()
+            //TODO ditch test wallet name
+            userToken = getRootsWallet(TEST_WALLET_NAME)
           }
         } catch (e) {
           // Restoring token failed

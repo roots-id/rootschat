@@ -1,12 +1,7 @@
-import uuid from 'react-native-uuid';
-import { addChat,addMessage,createUserDisplay,
-    dbStatus,
-    DID_ALIAS,DID_URI_LONG_FORM,getChats,
-    getCredRequests,
-    getMessages,getUserDisplay,getWallet,
-    hasDbWallet, logger, newChat, restoreWallet,
-    saveWallet,WALLET_DIDS } from '../db'
+import * as db from '../db'
+import { logger } from '../logging'
 import PrismModule from '../prism'
+import * as walletSchema from '../schemas/WalletSchema'
 
 import rwLogo from '../assets/LogoOnly1024.png'
 import perLogo from '../assets/smallBWPerson.png'
@@ -46,6 +41,8 @@ const LIBRARY_BOT = "LibraryBot1"
 const demo = true;
 export const currentTime = new Date().getTime();
 
+let currentWal;
+
 const PUBLISHED_PRISM_CHAT_CREDENTIAL = "publishedPrismChatCredential"
 
 const handlers = {};
@@ -59,9 +56,9 @@ export function getUser(userId) {
 
 //----------------- Wallet ---------------------
 export async function createWallet(walletName,mnemonic,passphrase) {
-    const result = saveWallet(PrismModule.newWal(walletName,mnemonic,passphrase))
+    const result = await updateWallet(PrismModule.newWal(walletName,mnemonic,passphrase))
     if(result) {
-        logger('Wallet created',getWalletJson())
+        logger('Wallet created',db.getWallet(currentWal._id))
         return result;
     } else {
         logger('Could not create wallet',walletName,passphrase)
@@ -71,7 +68,7 @@ export async function createWallet(walletName,mnemonic,passphrase) {
 
 export async function loadWallet(passphrase) {
     logger("loading wallet with passphrase",passphrase);
-    const loadedWal = await restoreWallet(passphrase);
+    const loadedWal = await db.restoreWallet(passphrase);
     if(loadedWal) {
         logger("loaded wallet with passphrase",loadedWal);
         return loadedWal
@@ -83,67 +80,73 @@ export async function loadWallet(passphrase) {
 
 export async function storageStatus() {
     console.log("Getting storage status")
-    await dbStatus();
+    await db.status();
 }
 
 export async function hasWallet(walName) {
-    let wallet = getWallet();
-    if(!wallet || wallet == null) {
-        if(await hasDbWallet(walName)) {
-            logger("Has wallet in db",walName);
-            return true;
-        } else {
-            logger("Does not have wallet",walName);
-            return false;
-        }
+    let wal = db.hasWallet(walName);
+    if(!wal || wal == null) {
+        logger("roots - Does not have wallet",walName);
+        return false;
     }
     else{
-        logger("Has wallet in memory ",getWalletJson());
+        logger("roots - Has wallet",db.getWallet(currentWal._id));
         return true;
     }
  }
 
-function getWalletJson() {
-    const walJson = JSON.stringify(getWallet())
-    return walJson
+export function getRootsWallet(walName) {
+    if(!currentWal) {
+        logger("roots - get json wallet from dbcache",db.getWallet(walName));
+        currentWal = JSON.parse(db.getWallet(walName));
+    }
+    logger("roots - get roots wallet from memory",db.getWallet(walName));
+    return currentWal;
 }
 
-export function getRootsWallet() {
-    logger("get roots wallet");
-    return getWallet()
+export async function updateWallet(walJson) {
+    if(await db.saveWallet(walJson)) {
+        currentWal = JSON.parse(walJson)
+        logger("roots - updated roots wallet",walJson);
+        return true;
+    } else {
+        console.error("roots - failed to update roots wallet",walJson);
+        return false;
+    }
 }
 
 //------------------ Chats (DIDs) --------------
 export async function createChat (chatName,titlePrefix) {
+    logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
     if(!getDid(chatName)) {
-        logger("Creating chat",chatName,"w/ titlePrefix",titlePrefix)
-        const prismWalletJson = PrismModule.newDID(getWalletJson(),chatName)
+        logger("Creating chat did existence check passed")
+        const prismWalletJson = PrismModule.newDID(db.getWallet(currentWal._id),chatName)
         logger("Chat w/prismDid wallet", prismWalletJson)
-        const saveResult = await saveWallet(prismWalletJson)
+        const saveResult = updateWallet(prismWalletJson)
         if(saveResult) {
             const newDid = getDid(chatName);
-            createUserDisplay(newDid[DID_ALIAS],"You",personLogo)
-            let newCh = newChat(newDid[DID_ALIAS],titlePrefix)
-            sendMessage(newCh,"Welcome to *"+newDid[DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
+            db.createUserDisplay(newDid[walletSchema.DID_ALIAS],"You",personLogo)
+            let newCh = db.newChat(newDid[walletSchema.DID_ALIAS],titlePrefix)
+            sendMessage(newCh,"Welcome to *"+newDid[walletSchema.DID_ALIAS]+"*",TEXT_MSG_TYPE,getUserDisplay(ROOTS_BOT))
             sendMessage(newCh,"Would you like to publish this chat to Prism?",
                 PROMPT_PUBLISH_MSG_TYPE,getUserDisplay(PRISM_BOT))
             return newCh
         } else{
-            logger("Could not create chat, saving wallet failed");
+            console.error("Could not create chat, saving wallet failed");
         }
     } else {
-        logger("Chat already exists",chatName)
+        console.error("Chat already exists",chatName)
     }
 }
 
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
-    if(getChats().length == 0 && demo) {
+    if(db.getChats().length == 0 && demo) {
         await initializeDemo()
     }
     const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: getChats()}};
+        let result = {paginator: {items: db.getChats()}};
         result.paginator.items.forEach(function (item, index) {
           logger("getting chats",index+".",item.id);
         });
@@ -154,7 +157,7 @@ export async function getAllChats () {
 
 export function getChat(chatId) {
     logger("getting chat " + chatId);
-    const chats = getChats().filter(chat => {if(chat.id === chatId){logger("chat found",chat.id);return true;}})
+    const chats = db.getChats().filter(chat => {if(chat.id === chatId){logger("chat found",chat.id);return true;}})
     if(chats && chats.length>0) {
         return chats[0]
     } else {
@@ -164,8 +167,8 @@ export function getChat(chatId) {
 }
 
 function getDid(didAlias) {
-    if(getWallet()[WALLET_DIDS]) {
-        const dids = getWallet()[WALLET_DIDS].filter(did => {
+    if(currentWal[walletSchema.WALLET_DIDS]) {
+        const dids = currentWal[walletSchema.WALLET_DIDS].filter(did => {
             if(did["alias"] === didAlias) {
                 return true;
             } else {
@@ -189,8 +192,8 @@ export async function publishChat(chat) {
     if(!chat["published"]) {
         logger("Publishing DID",chat.id,"to Prism")
         isProcessing(true)
-        const newWalJson = await PrismModule.publishDid(getWalletJson(), chat.id)
-        const wallet = JSON.parse(newWalJson)
+        const newWalJson = await PrismModule.publishDid(db.getWallet(currentWal._id), chat.id)
+        updateWallet(newWalJson)
         chat["published"]=true
         chat["title"]=chat.title+"🔗"
         isProcessing(false)
@@ -336,8 +339,8 @@ async function createCredential(chat,cred) {
     const credJson = JSON.stringify(cred)
     logger("Sending credJson", credJson)
     isProcessing(true)
-    const newWalJson = await PrismModule.issueCred(getWalletJson(), chat.id, credJson);
-    const savedWal = await saveWallet(newWalJson)
+    const newWalJson = await PrismModule.issueCred(db.getWallet(currentWal._id), chat.id, credJson);
+    const savedWal = updateWallet(newWalJson)
     if(savedWal) {
         await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
               STATUS_MSG_TYPE,
@@ -353,8 +356,8 @@ async function createCredential(chat,cred) {
 function getCredential(credAlias) {
     logger("Getting credential",credAlias)
 
-    if(getWallet()["issuedCredentials"]) {
-        creds = getWallet()["issuedCredentials"].filter(cred => {
+    if(currentWal["issuedCredentials"]) {
+        creds = currentWal["issuedCredentials"].filter(cred => {
             if(cred["alias"] === credAlias) {
                 logger("Found alias",cred["alias"])
                 return true
@@ -437,13 +440,13 @@ export function getFakePromise(timeoutMillis) {
 }
 
 function initDemoUserDisplays() {
-    createUserDisplay(ROOTS_BOT,
+    db.createUserDisplay(ROOTS_BOT,
                   "RootsWallet",
                   rootsLogo)
-    createUserDisplay(PRISM_BOT,
+    db.createUserDisplay(PRISM_BOT,
                   "Atala Prism",
                   prismLogo)
-    createUserDisplay(
+    db.createUserDisplay(
                   LIBRARY_BOT,
                   "Library",
                   personLogo)
@@ -481,7 +484,7 @@ export async function createDemoCredential(chat) {
                 "No problem! Your identity wallet is under your control.",
                 STATUS_MSG_TYPE,getUserDisplay(ROOTS_BOT))
         } else if (getCredRequests()[credAlias] === CRED_ACCEPTED) {
-            const didLong = getWallet()[WALLET_DIDS][getWallet()[WALLET_DIDS].length-1][DID_URI_LONG_FORM]
+            const didLong = currentWal[walletSchema.WALLET_DIDS][currentWal[walletSchema.WALLET_DIDS].length-1][DID_URI_LONG_FORM]
             logger("Creating demo credential for chat",chat.id,"w/long form did",didLong)
             const cred = {
                 alias: credAlias,

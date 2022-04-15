@@ -1,43 +1,48 @@
-import * as AsyncWallet from './AsyncStoreWallet'
+import * as AsyncStore from './AsyncStore'
+import * as CachedStore from './CachedStore'
+//TODO move this into AsyncStore so they can work together?
 import * as SecureStore from 'expo-secure-store';
-
-export const DID_ALIAS = "alias";
-export const DID_URI_LONG_FORM = "uriLongForm"
-export const WALLET_DIDS = "dids";
+import { logger } from '../logging'
 
 const chats = []
 //indexed by chat name
 const messages = {}
-const userDisplays = {}
+const userDisplays: {
+    id: string,
+    displayName: string,
+    displayPictureUrl: string} = {};
 const quickReplyResults = {}
 const credRequests = {}
 
-let wallet;
+export async function status() {
+    logger("db - Prompting for status messages")
+    await AsyncStore.status();
+    CachedStore.status();
+}
 
-export function logger(...args) {
-    //TODO divide long args and give samples
-    if(args.length > 0) {
-        console.log("roots -",...args.map(arg => String(arg).substring(0,150),"..."));
+export function getWallet(walName) {
+    const walJson = CachedStore.getWallet(walName);
+    if (!walJson || walJson == null) {
+        logger('db - no cached wallet found')
+        return;
+    } else {
+        logger('db - cached wallet found',walJson)
+        return walJson;
     }
 }
 
-export async function dbStatus() {
-    logger("db - Prompting for db status messages")
-    AsyncWallet.status();
-}
-
-export function getWallet() {
-    logger("db - Got wallet from cache",JSON.stringify(wallet))
-    return wallet;
-}
-
-export async function hasDbWallet(walName) {
-    const walJson = await AsyncWallet.getWallet(walName)
-    if (!walJson || walJson == null) {
-        logger('db - No wallet found')
-        return false;
-    } else {
-        logger('db - Wallet found',walJson)
+export async function hasWallet(walName) {
+    if(!cachedStore.hasWallet(walName)) {
+        if(await AsyncStore.hasWallet(walName)) {
+            logger("db - Has wallet in db",walName);
+            return true;
+        } else {
+            logger("Does not have wallet",walName);
+            return false;
+        }
+    }
+    else{
+        logger("Has wallet in cache",getWalletJson());
         return true;
     }
 }
@@ -47,9 +52,9 @@ export async function restoreWallet(passphrase) {
         //TODO use keychain for secrets, etc.
         const walName = await SecureStore.getItemAsync(passphrase);
         if(walName && walName !== null) {
-            const walJson = await AsyncWallet.getWallet(walName)
+            const walJson = await AsyncStore.getWallet(walName)
             if(walJson) {
-                wallet = JSON.parse(walJson)
+                CachedStore.storeWallet(walJson)
                 return true;
             } else {
                 logger("db - No wallet found for walName", walName)
@@ -99,9 +104,14 @@ async function storeWallet(wal,walJson) {
         try {
             logger('db - secure storing wallet')
             await SecureStore.setItemAsync(wal.passphrase,wal._id);
-            await AsyncWallet.storeWallet(wal._id,walJson)
-            logger('db - secure stored wallet')
-            return true
+            if(await AsyncStore.storeWallet(wal._id,walJson)) {
+                CachedStore.storeWallet(wal._id,walJson)
+                logger('db - secure stored wallet')
+                return true
+            } else {
+                logger('db - could not store in async store')
+                return false
+            }
         } catch(error) {
             errMsgs.push(error.message)
             logger(...errMsgs)
@@ -113,7 +123,7 @@ async function storeWallet(wal,walJson) {
     }
 }
 
-export function createUserDisplay(userAlias, userName, userPicUrl) {
+export function createUserDisplay(userAlias: string, userName: string, userPicUrl: string) {
     userDisplays[userAlias] = {
         id: userAlias,
         displayName: userName,
@@ -122,12 +132,12 @@ export function createUserDisplay(userAlias, userName, userPicUrl) {
     logger("Created User Display w/ alias",userAlias," = ",JSON.stringify(userDisplays[userAlias]))
 }
 
-export function getUserDisplay(userAlias) {
+export function getUserDisplay(userAlias: string) {
     logger("Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]),"....")
     return userDisplays[userAlias]
 }
 
-export function newChat(didAlias, titlePrefix) {
+export function newChat(didAlias: string, titlePrefix: string) {
     logger('Creating a new chat',didAlias)
     let chatJson = {
         id: didAlias,
@@ -144,7 +154,7 @@ export function getChats() {
     return chats
 }
 
-export function addChat(chatJson) {
+function addChat(chatJson: string) {
     if(!chats.includes(chatJson.id)) {
         chats.push(chatJson)
         logger("Chat",chatJson.id,"added.")
@@ -153,7 +163,7 @@ export function addChat(chatJson) {
     }
 }
 
-export function getMessages(chatId, startFromMsgId) {
+export function getMessages(chatId: string, startFromMsgId: string) {
     if(!messages[chatId]) {
         messages[chatId]=[]
     }
@@ -176,17 +186,17 @@ export function getMessages(chatId, startFromMsgId) {
     return chMsgs;
 }
 
-export function addMessage(chatId, message) {
+export function addMessage(chatId: string, message: string) {
     logger("Adding",JSON.stringify(message),".... to chat",chatId)
     messages[chatId].push(message)
 }
 
-export function getQuickReplyResult(replyId) {
+export function getQuickReplyResult(replyId: string) {
     logger("Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
     return quickReplyResults[replyId]
 }
 
-export function addQuickReplyResult(replyId,result) {
+export function addQuickReplyResult(replyId: string,result: string) {
     logger("Adding quick reply result",replyId,"=",result)
     quickReplyResults[replyId]=result
 }
