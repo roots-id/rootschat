@@ -1,0 +1,59 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext {
+        buildToolsVersion = "29.0.3"
+        minSdkVersion = 26
+        compileSdkVersion = 30
+        targetSdkVersion = 30
+    }
+    repositories {
+        google()
+        mavenCentral()
+        jcenter()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:4.1.0")
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.6.20"
+}
+
+allprojects {
+
+    repositories {
+        mavenLocal()
+        maven {
+            // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+            url(new File(["node", "--print", "require.resolve('react-native/package.json')"].execute(null, rootDir).text.trim(), "../android"))
+        }
+        maven {
+            // Android JSC is installed from npm
+            url(new File(["node", "--print", "require.resolve('jsc-android/package.json')"].execute(null, rootDir).text.trim(), "../dist"))
+        }
+
+        google()
+        mavenCentral()
+        jcenter()
+        maven { url 'https://www.jitpack.io' }
+        maven {
+            url = uri("https://maven.pkg.github.com/input-output-hk/better-parse")
+            credentials {
+                username = "atala-dev"
+                password = System.getenv("PRISM_SDK_PASSWORD")
+            }
+        }
+        maven {
+            url = uri("https://maven.pkg.github.com/roots-id/wal-library")
+            credentials {
+                username = System.getenv("GITHUB_USER")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+}
