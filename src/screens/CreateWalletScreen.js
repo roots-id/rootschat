@@ -8,8 +8,7 @@ import FormInput from '../components/FormInput';
 import * as SecureStore from 'expo-secure-store';
 
 import AuthContext from '../context/AuthenticationContext';
-import {TEST_WALLET_NAME} from '../navigation/AuthStack';
-import { createWallet, storageStatus } from '../roots'
+import { createWallet, storageStatus, TEST_WALLET_NAME } from '../roots'
 
 //async function save(key, value) {
 //  await SecureStore.setItemAsync(key, value);

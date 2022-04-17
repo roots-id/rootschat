@@ -13,10 +13,9 @@ import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import StartChatScreen from '../screens/StartChatScreen';
 
-import { getChat, getRootsWallet, loadWallet, storageStatus, hasWallet } from '../roots'
+import { getChat, getRootsWallet, loadWallet, storageStatus, hasWallet, TEST_WALLET_NAME } from '../roots'
 
 const Stack = createStackNavigator();
-export const TEST_WALLET_NAME = "testWalletName"
 
 export default function AuthStack() {
     console.log("AuthStack - Determining which auth screen to use.")
