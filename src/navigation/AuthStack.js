@@ -54,14 +54,19 @@ export default function AuthStack() {
           console.log("AuthStack - getting RootsWallet")
           await storageStatus()
           //TODO ditch test wallet name
-          setWalletFound(await hasWallet(TEST_WALLET_NAME))
-          if(walletFound) {
+          const walFound = await hasWallet(TEST_WALLET_NAME)
+          console.log("AuthStack - wallet found?",walFound)
+          setWalletFound(walFound)
+          if(walFound) {
             //TODO ditch test wallet name
+            console.log("AuthStack - since wallet found, getting rootsWallet")
             userToken = getRootsWallet(TEST_WALLET_NAME)
+          } else {
+            console.log("AuthStack - since wallet NOT found, auth token not set")
           }
         } catch (e) {
           // Restoring token failed
-          console.log("AuthStack - Failed to restore wallet from storage")
+          console.log("AuthStack - Failed to restore wallet from storage",e)
         }
 
         dispatch({ type: 'RESTORE_TOKEN', token: userToken });
@@ -104,7 +109,7 @@ export default function AuthStack() {
             }}
 
         >
-            {state.userToken == null ? (
+            {!state.userToken || state.userToken == null ? (
               <>
                 {walletFound ? (
                     <>

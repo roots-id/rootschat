@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Bubble, ChatInput, Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
 import { KeyboardAvoidingView, NativeModules, StyleSheet, Text, View } from 'react-native';
+import { Actions, ActionsProps, Bubble, ChatInput,
+    Composer, GiftedChat, InputToolbar, Message, SendButton } from 'react-native-gifted-chat';
 //import { Video, VideoPlayer } from 'react-native-video'
 //import { useInterval } from 'usehooks-ts'
 //import { BarCodeScanner } from 'expo-barcode-scanner';
@@ -18,7 +19,7 @@ import SlackMessage from '../components/SlackMessage';
 const { PrismModule } = NativeModules;
 
 export default function ChatScreen({ route }) {
-    console.log("route params",route.params)
+    console.log("ChatScreen - route params",route.params)
 //  const [ user, setUser ] = useState(user);
     const chat = getChat(route.params.chatId);
 //    const [hasPermission, setHasPermission] = useState(null);
@@ -30,12 +31,16 @@ export default function ChatScreen({ route }) {
     const [showSystem, setShowSystem] = useState(false)
 
     useEffect(() => {
+        let isCancelled = false;
+
         const chatSession = startChatSession({
             chat: chat,
             onReceivedMessage: (message) => {
-                setMessages((currentMessages) =>
-                    GiftedChat.append(currentMessages, [mapMessage(message)])
-                );
+                if (!isCancelled) {
+                    setMessages((currentMessages) =>
+                        GiftedChat.append(currentMessages, [mapMessage(message)])
+                    );
+                }
             },
             onReceivedKeystrokes: (keystrokes) => {
              // handle received typing keystrokes
@@ -65,7 +70,9 @@ export default function ChatScreen({ route }) {
              // handle chat changes
             },
             onProcessing: (processing) => {
-                setProcessing(processing)
+                if (!isCancelled) {
+                    setProcessing(processing)
+                }
             },
         });
         if (chatSession.succeeded) {
@@ -75,23 +82,26 @@ export default function ChatScreen({ route }) {
             const error = chatSession.error; // Handle error
         }
         getAllMessages(chat.id)
-        .then((result) => {
-            setMessages(result.paginator.items.map(mapMessage));
-            setLoading(false);
-        });
-        return chatSession.end;
+            .then((result) => {
+                setMessages(result.paginator.items.map(mapMessage));
+                setLoading(false);
+            });
+        return () => {
+            isCancelled = true
+            chatSession.end
+        }
     }, [chat]);
 
     useEffect(() => {
-        //console.log("Front-end messages updated")
+        //console.log("ChatScreen - Front-end messages updated")
     }, [messages]);
 
     useEffect(() => {
-        console.log("Checked Processing")
+        console.log("ChatScreen - Checked Processing")
     }, [processing]);
 
     useEffect(() => {
-            console.log("Show system")
+            console.log("ChatScreen - Show system")
             getAllMessages(chat.id)
                     .then((result) => {
                         setMessages(result.paginator.items.map(mapMessage));
@@ -150,10 +160,25 @@ export default function ChatScreen({ route }) {
 //processQuickReply(chat,reply)
     async function handleQuickReply(reply) {
         const result = await processQuickReply(chat,reply)
-        console.log("Quick Reply processing complete",result)
+        console.log("ChatScreen - Quick Reply processing complete")
 //        await setMessages((prevMessages) =>
 //                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }
+
+//function renderActions(props: Readonly<ActionsProps>) {
+//    return (
+//      <Actions
+//        {...props}
+//        options={{
+//          ['Send Image']: handlePickImage,
+//        }}
+//        icon={() => (
+//          <Icon name={'attachment'} size={28} color={AppTheme.colors.primary} />
+//        )}
+//        onSend={args => console.log(args)}
+//      />
+//    )
+//  }
 
 //#fad58b
   function renderBubble(props) {
@@ -259,7 +284,7 @@ export default function ChatScreen({ route }) {
 //  }
 
 //  function renderMessageImage(props) {
-//    console.log("Rendering message image",props);
+//    console.log("ChatScreen - Rendering message image",props);
 //    return (
 //      <MessageImage
 //        {...props}
@@ -285,6 +310,7 @@ export default function ChatScreen({ route }) {
 //                    style: styles.url,
 //                    onPress: (tag) => console.log(`Pressed on hashtag: ${tag}`),
 //                  },
+//renderActions={renderActions}
   return (
     <View style={{ backgroundColor: "#251520", flex: 1, display: "flex",}}>
       <GiftedChat
@@ -318,12 +344,15 @@ export default function ChatScreen({ route }) {
   //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
   //<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
   function mapMessage(message) {
-      //console.log("Map message for gifted",message);
+      //console.log("ChatScreen - Map message for gifted",message);
       mappedMsg={}
       mappedMsg["_id"] = message.id
       mappedMsg["text"] = message.body
       mappedMsg["createdAt"] = new Date(message.createdTime)
       mappedMsg["user"] = mapUser(message.user)
+      if(message["image"]) {
+        mappedMsg["image"] = message["image"]
+      }
       if(message["quickReplies"]) {
         mappedMsg["quickReplies"] = message["quickReplies"]
       }
@@ -348,7 +377,7 @@ export default function ChatScreen({ route }) {
   }
 
   function mapUser(user) {
-    //console.log("Map User for gifted",user);
+    //console.log("ChatScreen - Map User for gifted",user);
     return {
       _id: user.id,
       name: user.displayName,

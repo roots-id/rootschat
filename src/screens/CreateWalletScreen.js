@@ -59,7 +59,7 @@ export default function CreateWalletScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [walletName, setWalletName] = useState(TEST_WALLET_NAME);
   const [problemDisabled, setProblemDisabled] = useState(true)
-  console.log("CreateWalletScreen - creating wallet")
+  console.log("CreateWalletScreen - start")
 
   const { signIn } = React.useContext(AuthContext);
 

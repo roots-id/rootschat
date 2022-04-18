@@ -7,7 +7,7 @@ import FormInput from '../components/FormInput';
 
 import AuthContext from '../context/AuthenticationContext';
 
-import { loadWallet } from '../roots'
+import { loadWallet, TEST_WALLET_NAME } from '../roots'
 
 //async function save(key, value) {
 //  await SecureStore.setItemAsync(key, value);
@@ -76,7 +76,8 @@ export default function LoginScreen({ navigation }) {
             labelStyle={styles.loginButtonLabel}
             onPress={async () => {
               console.log("LoginScreen - Logging in with password")
-              const wal = await loadWallet(password)
+              //TODO get rid of TEST_WALLET_NAME
+              const wal = await loadWallet(TEST_WALLET_NAME,password)
               if(wal) {
                 console.log("LoginScreen - login with password success")
                 setProblemDisabled(true)

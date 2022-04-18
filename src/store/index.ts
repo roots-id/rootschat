@@ -4,7 +4,6 @@ import * as CachedStore from './CachedStore'
 import * as SecureStore from 'expo-secure-store';
 import { logger } from '../logging'
 
-const chats = []
 //indexed by chat name
 const messages = {}
 const userDisplays: {
@@ -15,101 +14,102 @@ const quickReplyResults = {}
 const credRequests = {}
 
 export async function status() {
-    logger("db - Prompting for status messages")
+    logger("store - Prompting for status messages")
     await AsyncStore.status();
     CachedStore.status();
 }
 
-export function getWallet(walName) {
+export function getWallet(walName: string) {
     const walJson = CachedStore.getWallet(walName);
     if (!walJson || walJson == null) {
-        logger('db - no cached wallet found')
+        logger('store - no cached wallet found')
         return;
     } else {
-        logger('db - cached wallet found',walJson)
+        logger('store - cached wallet found',walJson)
         return walJson;
     }
 }
 
-export async function hasWallet(walName) {
-    if(!cachedStore.hasWallet(walName)) {
-        if(await AsyncStore.hasWallet(walName)) {
-            logger("db - Has wallet in db",walName);
+export async function hasWallet(walName: string) {
+    if(!CachedStore.hasWallet(walName)) {
+        const hasWallet = await AsyncStore.hasWallet(walName)
+        if(hasWallet) {
+            logger("store - Has wallet in store",walName);
             return true;
         } else {
-            logger("Does not have wallet",walName);
+            logger("store - Does not have wallet",walName);
             return false;
         }
     }
     else{
-        logger("Has wallet in cache",getWalletJson());
+        logger("store - Has wallet in cache",getWalletJson());
         return true;
     }
 }
 
-export async function restoreWallet(passphrase) {
+export async function restoreWallet(passphrase: string) {
     try {
         //TODO use keychain for secrets, etc.
         const walName = await SecureStore.getItemAsync(passphrase);
-        if(walName && walName !== null) {
+        logger("restoring",walName,"w/passphrase",passphrase)
+        if(!walName || walName == null) {
+            logger("store - cannot restore wallet w/passphrase", passphrase)
+            return false;
+        }else {
             const walJson = await AsyncStore.getWallet(walName)
             if(walJson) {
-                CachedStore.storeWallet(walJson)
+                logger("store - putting restored wallet in cache",walName,":",walJson)
+                CachedStore.storeWallet(walName,walJson)
                 return true;
             } else {
-                logger("db - No wallet found for walName", walName)
+                logger("store - No wallet found for walName", walName)
+                return false;
             }
-        }else {
-            logger("db - No wallet found for passphrase", passphrase)
         }
     } catch (error) {
-        logger("db - getting wallet from secure store failed",error)
+        logger("store - getting wallet from secure store failed",error)
         return false
     }
-
-    return false
 }
 
-export async function saveWallet(walJson) {
-    logger("db - Saving wallet",walJson)
+export async function saveWallet(walName: string, walPass: string, walJson: string) {
+    logger("store - Saving wallet",walName,":",walJson)
     if(walJson && walJson.length > 0) {
         try {
-            logger("db - Saving wallet to storage",walJson)
+            logger("store - Saving wallet to storage",walName,":",walJson)
             //TODO use keychain to encrypt values
-            const wal = JSON.parse(walJson);
-            result = await storeWallet(wal,walJson)
+            const result = await storeWallet(walName,walPass,walJson)
             if(result) {
-                logger("db - successfully saved wallet",result)
-                wallet = wal;
+                logger("store - successfully saved wallet",walName,":",result)
                 return true;
             } else {
-                logger("db - failed to save wallet", result)
+                logger("store - failed to save wallet", walName,":",result)
                 return false;
             }
         } catch(error) {
-            logger("db - could not save wallet",walJson)
+            logger("store - could not save wallet",walName,":",walJson,error)
+            return false;
         }
-        logger("db - Saved Wallet", result)
     } else {
-        logger("db - Could not save wallet",walJson)
+        logger("store - Could not save wallet",walName,":",walJson)
         return false;
     }
 }
 
-async function storeWallet(wal,walJson) {
+async function storeWallet(walName: string, walPass: string, walJson: string) {
     const errMsgs = [];
-    errMsgs.push("db - can't store wallet "+wal._id);
+    errMsgs.push("store - can't store wallet "+walName);
     errMsgs.push("wallet "+walJson);
     if(walJson) {
         try {
-            logger('db - secure storing wallet')
-            await SecureStore.setItemAsync(wal.passphrase,wal._id);
-            if(await AsyncStore.storeWallet(wal._id,walJson)) {
-                CachedStore.storeWallet(wal._id,walJson)
-                logger('db - secure stored wallet')
+            logger('store - secure storing wallet',walName,"w/ pass",walPass)
+            await SecureStore.setItemAsync(walPass,walName);
+            if(await AsyncStore.storeWallet(walName,walJson)) {
+                CachedStore.storeWallet(walName,walJson)
+                logger('store - secure stored wallet')
                 return true
             } else {
-                logger('db - could not store in async store')
+                logger('store - could not store in async store')
                 return false
             }
         } catch(error) {
@@ -129,37 +129,24 @@ export function createUserDisplay(userAlias: string, userName: string, userPicUr
         displayName: userName,
         displayPictureUrl: userPicUrl,
     }
-    logger("Created User Display w/ alias",userAlias," = ",JSON.stringify(userDisplays[userAlias]))
+    logger("store - Created User Display w/ alias",userAlias," = ",JSON.stringify(userDisplays[userAlias]))
 }
 
 export function getUserDisplay(userAlias: string) {
-    logger("Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]),"....")
+    logger("store - Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]),"....")
     return userDisplays[userAlias]
-}
-
-export function newChat(didAlias: string, titlePrefix: string) {
-    logger('Creating a new chat',didAlias)
-    let chatJson = {
-        id: didAlias,
-        published: false,
-        title: titlePrefix + didAlias,
-        type: "DIRECT",
-    };
-    addChat(chatJson)
-    logger(didAlias,'chat created.')
-    return chatJson
 }
 
 export function getChats() {
     return chats
 }
 
-function addChat(chatJson: string) {
+function saveChat(chatAlias: string, chatJson: string) {
     if(!chats.includes(chatJson.id)) {
         chats.push(chatJson)
-        logger("Chat",chatJson.id,"added.")
+        logger("store - Chat",chatJson.id,"added.")
     } else {
-        logger("Chat",chatJson.id,"already exists.  Not adding")
+        logger("store - Chat",chatJson.id,"already exists.  Not adding")
     }
 }
 
@@ -169,7 +156,7 @@ export function getMessages(chatId: string, startFromMsgId: string) {
     }
 
     let chMsgs = messages[chatId]
-    logger("Getting chat",chatId,chMsgs.length,"messages")
+    logger("store - Getting chat",chatId,chMsgs.length,"messages")
 
     if(startFromMsgId) {
         for(i = 0; i < chMsgs.length; i++) {
@@ -187,17 +174,17 @@ export function getMessages(chatId: string, startFromMsgId: string) {
 }
 
 export function addMessage(chatId: string, message: string) {
-    logger("Adding",JSON.stringify(message),".... to chat",chatId)
+    logger("store - Adding",JSON.stringify(message),".... to chat",chatId)
     messages[chatId].push(message)
 }
 
 export function getQuickReplyResult(replyId: string) {
-    logger("Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
+    logger("store - Getting quick reply result for id",replyId,"=",quickReplyResults[replyId])
     return quickReplyResults[replyId]
 }
 
 export function addQuickReplyResult(replyId: string,result: string) {
-    logger("Adding quick reply result",replyId,"=",result)
+    logger("store - Adding quick reply result",replyId,"=",result)
     quickReplyResults[replyId]=result
 }
 
