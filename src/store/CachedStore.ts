@@ -7,6 +7,7 @@ let cachedChats: {
      [messages: string]: string[]
  } = {}; = {};
 
+
 let cachedWallets: { [walName: string]: string } = {};
 
 export function getChat(chatName: string) {
