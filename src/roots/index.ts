@@ -162,7 +162,7 @@ export async function createChat (chatName,titlePrefix) {
             const newDid = getDid(chatName);
             logger("roots - new chat did is",newDid)
             store.createUserDisplay(newDid[walletSchema.DID_ALIAS],"You",personLogo)
-            let newCh = store.newChat(newDid[walletSchema.DID_ALIAS],titlePrefix)
+            let newCh = store.saveChat(newDid[walletSchema.DID_ALIAS], titlePrefix)
             sendMessage(newCh,"Welcome to *"+newDid[walletSchema.DID_ALIAS]+"*",TEXT_MSG_TYPE,store.getUserDisplay(ROOTS_BOT))
             sendMessage(newCh,"Would you like to publish this chat to Prism?",
                 PROMPT_PUBLISH_MSG_TYPE,store.getUserDisplay(PRISM_BOT))
@@ -180,7 +180,7 @@ export async function createChat (chatName,titlePrefix) {
 export async function getAllChats () {
     if(store.getChats().length == 0 && demo) {
         logger("roots - adding demo to chats")
-        await initializeDemo()
+        await initDemo()
     }
     const promise1 = new Promise((resolve, reject) => {
         let result = {paginator: {items: store.getChats()}};
@@ -205,12 +205,6 @@ export function getChat(chatId) {
 
 export function newChat(chatAlias: string, titlePrefix: string) {
     logger('store - Creating a new chat',chatAlias)
-    chat: {
-        [id: string]: string,
-        [published: string]: bool,
-        [title: string]: string,
-        [messages: string]: string[]
-        } = {};
     chat[chatAlias] = {
         id: chatAlias,
         published: false,
@@ -489,7 +483,7 @@ function initDemoUserDisplays() {
                   personLogo)
 }
 
-async function initializeDemo() {
+async function initDemo() {
     const users = await initDemoUserDisplays()
     const intro = await initDemoIntro()
 //    const achievements = await initDemoAchievements()

@@ -1,6 +1,12 @@
 import { logger } from '../logging'
 
-let cachedChats: {[didAlias: string]: string} = {};
+let cachedChats: {
+     [id: string]: string,
+     [published: string]: bool,
+     [title: string]: string,
+     [messages: string]: string[]
+ } = {}; = {};
+
 let cachedWallets: { [walName: string]: string } = {};
 
 export function getChat(chatName: string) {

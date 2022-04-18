@@ -5,7 +5,7 @@ import * as SecureStore from 'expo-secure-store';
 import { logger } from '../logging'
 
 //indexed by chat name
-const messages = {}
+//const messages = {}
 const userDisplays: {
     id: string,
     displayName: string,
@@ -141,8 +141,8 @@ export function getChats() {
     return chats
 }
 
-function saveChat(chatAlias: string, chatJson: string) {
-    if(!chats.includes(chatJson.id)) {
+function saveChat(chatAlias: string, titlePrefix: string) {
+    if(!chats.includes(chatAlias)) {
         chats.push(chatJson)
         logger("store - Chat",chatJson.id,"added.")
     } else {
