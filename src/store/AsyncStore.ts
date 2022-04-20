@@ -1,21 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logging'
 
-export async function getChat(chatAlias: string) {
+export async function getDecorator(alias: string, type: string) {
   try {
-    const chatJson = await AsyncStorage.getItem(chatAlias)
-    if(!chatJson || chatJson == null) {
-        logger("AsyncStore - no chat found for name",chatAlias)
+    const decoratorJson = await AsyncStorage.getItem(getKey(alias,type))
+    if(!decoratorJson || decoratorJson == null) {
+        logger("AsyncStore - no decorator found for name",alias,"w/type",type)
         return null;
     } else {
-        logger("AsyncStore - chat found",chatAlias)
-        return chatJson
+        logger("AsyncStore - decorator found",alias,"w/type",type)
+        return decoratorJson
     }
   } catch(e) {
-    console.error("AsyncStore - Could not get async chat,",error)
+    console.error("AsyncStore - Could not get async decorator",alias,"w/type",type,error)
     return null;
   }
   return null;
+}
+
+function getKey(alias: string, type: string) {
+    const key = type+alias
+    logger("AsyncStore - made key",key)
+    return key
 }
 
 export async function getWallet(walName: string) {
@@ -35,15 +41,15 @@ export async function getWallet(walName: string) {
   return null;
 }
 
-export async function hasChat(chatAlias: string) {
-    const chatJson = await getChat(chatAlias)
-    const hasChat = !(!chatJson || chatJson == null);
-    if(hasChat) {
-        logger("AsyncStore - has chat",chatJson)
+export async function hasDecorator(alias: string, type: string) {
+    const decoratorJson = await getDecorator(alias,type)
+    const hasDecorator = !(!decoratorJson || decoratorJson == null);
+    if(hasDecorator) {
+        logger("AsyncStore - has decorator",alias,"w/type",type,decoratorJson)
     } else {
-        logger("AsyncStore - no chat found")
+        logger("AsyncStore - no decorator found",alias,"w/type",type)
     }
-    return hasChat;
+    return hasDecorator;
 }
 
 export async function hasWallet(walName: string) {
@@ -68,16 +74,16 @@ export async function status() {
   logger("AsyncStore - keys:",keys)
 }
 
-export async function storeChat(chatAlias: string,chatJson: string) {
+export async function storeDecorator(alias: string, type: string, decoratorJson: string) {
     try {
-        logger('AsyncStore - start storing chat',chatAlias)
-        const oldChat = await AsyncStorage.setItem(chatAlias, chatJson)
-        if(oldChat && oldChat !== null) {
-          logger("AsyncStore - Replace previous chat",oldChat)
+        logger('AsyncStore - start storing decorator',alias,"w/type",type)
+        const oldDecorator = await AsyncStorage.setItem(getKey(alias,type), decoratorJson)
+        if(oldDecorator && oldDecorator !== null) {
+          logger("AsyncStore - Replace previous decorator",alias,"w/type",type,oldDecorator)
         }
         return true;
     } catch(error) {
-        console.error("AsyncStore - Could not store async chat,",error)
+        console.error("AsyncStore - Could not store async decorator",alias,"w/type",type,error)
         return false;
     }
     return false;

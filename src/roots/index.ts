@@ -51,27 +51,64 @@ const PUBLISHED_PRISM_CHAT_CREDENTIAL = "publishedPrismChatCredential"
 const handlers = {};
 const allProcessing = [];
 
+export async function loadAll(walName: string,walPass: string) {
+    const wallet = await loadWallet(walName, walPass);
+    const chats = await loadChats();
+    const users = await loadUsers();
+    return wallet && chats && users;
+}
+
 //----------------- User -----------------
-async function createUserDecorator(didAlias: string) {
+async function createUserDecorator(alias: string, name: string, pic: string) {
     try {
-        if(getUserDecorator(didAlias)) {
-            console.error("roots - user already exists",didAlias)
+        if(getUserDecorator(alias,decorators.DECORATOR_TYPE_USER)) {
+            console.error("roots - user already exists",alias)
             return true;
         } else {
-            logger("roots - chat user did not exist")
-            const result = store.createUserDisplay(didAlias,"You",personLogo)
-            logger("roots - created user",didAlias,"?",result)
+            logger("roots - user did not exist",alias)
+            const userDecor = decorators.createUser(alias, name, pic)
+            const userDecorJson = JSON.stringify(userDecor)
+            logger("generated user",userDecorJson)
+            const result = await store.saveDecorator(alias, decorators.DECORATOR_TYPE_USER, userDecorJson)
+            logger("roots - created user",alias,"?",result)
             return result;
         }
     } catch(error) {
-        console.error("Failed to create user",error)
+        console.error("Failed to create user",alias,error)
         return false
     }
 }
 
 export function getUserDecorator(userId) {
     logger("roots - Getting user",userId)
-    return store.getUserDisplay(userId);
+    const userDecorJson = store.getDecorator(userId,decorators.DECORATOR_TYPE_USER);
+    logger("roots - Got user json",userDecorJson)
+    if(userDecorJson) {
+        const userDecor = JSON.parse(userDecorJson)
+        logger("roots - user w/keys",Object.keys(userDecor))
+        return userDecor
+    } else {
+        logger("roots - user not found",userId)
+        return userDecorJson
+    }
+}
+
+async function loadUsers() {
+    try {
+        const aliases = getAllDidAliases(currentWal);
+        const result = await store.restoreDecorators(aliases,decorators.DECORATOR_TYPE_USER);
+        if(result) {
+            logger("roots - successfully loaded chat decorators",aliases)
+            return true;
+        }
+        else {
+            console.error("roots - Failed to load chat decorators",aliases)
+            return false;
+        }
+    } catch(error) {
+        console.error("roots - Failed to load chat decorators",error)
+        return false;
+    }
 }
 
 //----------------- Wallet ---------------------
@@ -87,13 +124,12 @@ export async function createWallet(walName,mnemonic,walPass) {
     }
 }
 
-export async function loadWallet(walName,walPass) {
+export async function loadWallet(walName: string,walPass: string) {
     logger("roots - loading wallet",walName,"with walPass",walPass);
     const restored = await store.restoreWallet(walPass);
     //retrieving wallet pulls the object into memory here
     const rootsWal = getRootsWallet(walName)
-    const loadedChats = loadChats();
-    if(restored && !(!rootsWal || rootsWal == null) && loadedChats) {
+    if(restored && !(!rootsWal || rootsWal == null)) {
         logger("roots - loaded wallet",walName,"with walPass",walPass);
         return true
     } else {
@@ -202,7 +238,7 @@ export async function createChat (chatAlias, titlePrefix) {
     const chatDecor = getChatDecorator(chatDidAlias)
     logger("roots - chat decorator w/keys",Object.keys(chatDecor))
     //TODO what should the user defaults be?
-    const chatUserCreated = await createUserDecorator(chatDidAlias)
+    const chatUserCreated = await createUserDecorator(chatDidAlias,"You",personLogo)
     logger("roots - chat user created/existed?",chatUserCreated)
     const chatUser = getUserDecorator(chatDidAlias)
 
@@ -225,7 +261,7 @@ async function createChatDecorator(chatAlias: string, titlePrefix: string) {
         return true
     } else {
         const chatDecor = decorators.createChat(chatAlias, [], titlePrefix)
-        const savedChat = await store.saveChat(chatAlias, JSON.stringify(chatDecor))
+        const savedChat = await store.saveDecorator(chatAlias, decorators.DECORATOR_TYPE_CHAT, JSON.stringify(chatDecor))
         if(savedChat) {
             logger('roots - new chat saved',chatAlias)
             return true
@@ -238,7 +274,7 @@ async function createChatDecorator(chatAlias: string, titlePrefix: string) {
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
-    if(store.getChats().length == 0 && demo) {
+    if(store.getDecorators(decorators.DECORATOR_TYPE_CHAT).length == 0 && demo) {
         logger("roots - adding demo to chats")
         await initDemo()
     }
@@ -254,7 +290,7 @@ export async function getAllChats () {
 
 export function getChatDecorator(chatAlias: string) {
     logger("roots - getting chat decorator",chatAlias)
-    const chatJson = store.getChat(chatAlias)
+    const chatJson = store.getDecorator(chatAlias,decorators.DECORATOR_TYPE_CHAT)
     logger("roots - got chat",chatJson)
     if(chatJson) {
         const chat = JSON.parse(chatJson)
@@ -267,34 +303,34 @@ export function getChatDecorator(chatAlias: string) {
 
 function getChatDecorators() {
     logger("roots - getting chat decorators",String(chatDecorJsonArray))
-    const chatDecorJsonArray = store.getChats()
+    const chatDecorJsonArray = store.getDecorators(decorators.DECORATOR_TYPE_CHAT)
     logger("roots - getting chat decorators",String(chatDecorJsonArray))
     const chats = chatDecorJsonArray.map(chatDecorJson => JSON.parse(chatDecorJson))
     return chats;
 }
 
-function getAllChatAliases(wallet) {
+function getAllDidAliases(wallet) {
     const dids = wallet[walletSchema.WALLET_DIDS];
     if(!dids || dids == null || dids.length <= 0) {
-        logger("No dids to get chats for")
+        logger("No dids to get")
         return [];
     } else {
-        const chatAliases = dids.map(did => did[walletSchema.DID_ALIAS]);
-        logger("got chat aliases",String(chatAliases));
-        return chatAliases;
+        const aliases = dids.map(did => did[walletSchema.DID_ALIAS]);
+        logger("got did aliases",String(aliases));
+        return aliases;
     }
 }
 
 async function loadChats() {
     try {
-        const chatAliases = getAllChatAliases(currentWal);
-        const result = await store.restoreChats(chatAliases);
+        const aliases = getAllDidAliases(currentWal);
+        const result = await store.restoreDecorators(aliases,decorators.DECORATOR_TYPE_CHAT);
         if(result) {
-            logger("roots - successfully loaded chat decorators")
+            logger("roots - successfully loaded chat decorators",aliases)
             return true;
         }
         else {
-            console.error("roots - Failed to load chat decorators")
+            console.error("roots - Failed to load chat decorators",aliases)
             return false;
         }
     } catch(error) {
@@ -553,14 +589,14 @@ export function getFakePromise(timeoutMillis) {
     });
 }
 
-function initDemoUserDisplays() {
-    store.createUserDisplay(ROOTS_BOT,
+async function initDemoUserDisplays() {
+    await createUserDecorator(ROOTS_BOT,
                   "RootsWallet",
                   rootsLogo)
-    store.createUserDisplay(PRISM_BOT,
+    await createUserDecorator(PRISM_BOT,
                   "Atala Prism",
                   prismLogo)
-    store.createUserDisplay(
+    await createUserDecorator(
                   LIBRARY_BOT,
                   "Library",
                   personLogo)

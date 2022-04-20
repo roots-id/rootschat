@@ -1,28 +1,35 @@
 import { logger } from '../logging'
 
-let cachedChats: {[chatAlias: string]: string } = {};
+let cachedDecorators: {[alias: string]: string } = {};
 let cachedWallets: { [walName: string]: string } = {};
 
-export function getChat(chatAlias: string) {
-    const chatJson = cachedChats[chatAlias]
-    logger("CachedStore - get",chatAlias,"in cache is",chatJson)
-    return chatJson;
+function getCacheKey(alias: string, type: string) {
+    const key = type+alias
+    logger("CacheStore - made key",key)
+    return key
 }
 
-export function getChats() {
-    const keys = Object.keys(cachedChats)
-    logger("CachedStore - getting chats",keys)
-    const chats = []
+export function getDecorator(alias: string, type: string) {
+    const decoratorJson = cachedDecorators[getCacheKey(alias,type)]
+    logger("CachedStore - get",alias,"w/type",type,"in cache is",decoratorJson)
+    return decoratorJson;
+}
+
+export function getDecorators(type: string) {
+    //TODO improve identifying type, w/o using startswith
+    const keys = Object.keys(cachedDecorators).filter((key) => key.startsWith(type))
+    logger("CachedStore - getting decorators",keys,"w/type",type)
+    const decorators = []
     if(!keys || keys == null || keys.length <= 0) {
-        logger("CachedStore - No chats found");
-        return chats;
+        logger("CachedStore - No decorators found w/type",type);
+        return decorators;
     } else {
-        logger("CachedStore - # of chats",keys.length);
-        keys.forEach(chatAlias => {
-            logger("CachedStore - getting chat",chatAlias);
-            chats.push(cachedChats[chatAlias])
+        logger("CachedStore - # of decorators",keys.length,"w/type",type);
+        keys.forEach(alias => {
+            logger("CachedStore - getting decorator",alias,"w/type",type);
+            decorators.push(cachedDecorators[alias])
         })
-        return chats;
+        return decorators;
     }
 }
 
@@ -32,14 +39,14 @@ export function getWallet(walName: string) {
     return walJson;
 }
 
-export function hasChat(chatAlias: string) {
-    const chatJson = getChat(chatAlias)
-    const noChat = (!chatJson || chatJson == null);
-    if(noChat) {
-        logger("CachedStore - does not have chat",chatAlias)
+export function hasDecorator(alias: string, type: string) {
+    const decoratorJson = getDecorator(alias,type)
+    const noDecorator = (!decoratorJson || decoratorJson == null);
+    if(noDecorator) {
+        logger("CachedStore - does not have decorator",alias,"w/type",type)
         return false
     } else {
-        logger("CachedStore - has chat",chatJson)
+        logger("CachedStore - has decorator",alias,"w/type",type,decoratorJson)
         return true
     }
 }
@@ -57,20 +64,20 @@ export function hasWallet(walName: string) {
 
 export async function status() {
     logger("CachedStore - wallets:",Object.keys(cachedWallets))
-    logger("CachedStore - chats:",Object.keys(cachedChats))
+    logger("CachedStore - decorators:",Object.keys(cachedDecorators))
 }
 
-export function storeChat(chatAlias: string, chatJson: string) {
+export function storeDecorator(alias: string, type: string, decoratorJson: string) {
     try {
-        logger("CachedStore - storing chat",chatAlias,":",chatJson)
-        const oldChat = cachedChats[chatAlias]
-        cachedChats[chatAlias] = chatJson
-        if(oldChat && oldChat !== null) {
-            logger("CachedStore - Replace previous chatJson",oldChat)
+        logger("CachedStore - storing decorator",alias,"w/type",type,":",decoratorJson)
+        const oldDecorator = cachedDecorators[getCacheKey(alias,type)]
+        cachedDecorators[getCacheKey(alias,type)] = decoratorJson
+        if(oldDecorator && oldDecorator !== null) {
+            logger("CachedStore - Replace previous decoratorJson",alias,"w/type",type,oldDecorator)
         }
         return true;
     } catch(error) {
-        console.error("CachedStore - Could not store chat",error)
+        console.error("CachedStore - Could not store decorator",alias,"w/type",type,error)
         return false;
     }
     return false;

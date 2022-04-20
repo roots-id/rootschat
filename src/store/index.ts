@@ -4,12 +4,7 @@ import * as CachedStore from './CachedStore'
 import * as SecureStore from 'expo-secure-store';
 import { logger } from '../logging'
 
-//indexed by chat name
 const messages = {}
-const userDisplays: {
-    id: string,
-    displayName: string,
-    displayPictureUrl: string} = {};
 const quickReplyResults = {}
 const credRequests = {}
 
@@ -123,110 +118,96 @@ async function storeWallet(walName: string, walPass: string, walJson: string) {
     }
 }
 
-export function createUserDisplay(userAlias: string, userName: string, userPicUrl: string) {
-    userDisplays[userAlias] = {
-        id: userAlias,
-        displayName: userName,
-        displayPictureUrl: userPicUrl,
-    }
-    logger("store - Created User Display w/ alias",userAlias," = ",JSON.stringify(userDisplays[userAlias]))
-    return true;
-}
-
-export function getUserDisplay(userAlias: string) {
-    logger("store - Getting user display",userAlias," = ",JSON.stringify(userDisplays[userAlias]),"....")
-    return userDisplays[userAlias]
-}
-
-export async function hasChat(chatAlias: string) {
-    if(!CachedStore.hasChat(chatAlias)) {
-        const hasChat = await AsyncStore.hasChat(chatAlias)
-        if(hasChat) {
-            logger("store - Has chat in store",chatAlias);
+export async function hasDecorator(alias: string, type: string) {
+    if(!CachedStore.hasDecorator(alias,type)) {
+        const persisted = await AsyncStore.hasDecorator(alias,type)
+        if(persisted) {
+            logger("store - has decorator",alias,"w/type",type);
             return true;
         } else {
-            logger("store - Does not have chat",chatAlias);
+            logger("store - does not have decorator",alias,"w/type",type);
             return false;
         }
     }
     else{
-        logger("store - Has chat in cache",getChat(chatAlias));
+        logger("store - has decorator in cache",getDecorator(alias,type));
         return true;
     }
 }
 
-export function getChat(chatAlias) {
-    const chatDecorJson = CachedStore.getChat(chatAlias);
-    if (!chatDecorJson || chatDecorJson == null) {
-        logger('store - no cached chat found',chatAlias)
+export function getDecorator(alias: string, type: string) {
+    const decorJson = CachedStore.getDecorator(alias,type);
+    if (!decorJson || decorJson == null) {
+        logger('store - decorator not found in cache',alias,"w/type",type)
         return;
     } else {
-        logger('store - cached chat found',chatDecorJson)
-        return chatDecorJson;
+        logger('store - decorator found in cache',alias,"w/type",type,decorJson)
+        return decorJson;
     }
 }
 
-export function getChats() {
-    const chats = CachedStore.getChats();
-    if (!chats || chats == null || chats.length <= 0) {
-        logger('store - no cached chats found')
-        return chats;
+export function getDecorators(type: string) {
+    const decorators = CachedStore.getDecorators(type);
+    if (!decorators || decorators == null || decorators.length <= 0) {
+        logger('store - no cached decorators found')
+        return decorators;
     } else {
-        logger('store - cached chats found',chats)
-        return chats;
+        logger('store - cached decorators found',decorators)
+        return decorators;
     }
 }
 
-export async function restoreChats(chatAliases: string[]) {
-    if(!chatAliases || chatAliases == null || chatAliases.length <= 0) {
-        logger("store - No aliases to restore",chatAliases)
+export async function restoreDecorators(aliases: string[],type: string) {
+    if(!aliases || aliases == null || aliases.length <= 0) {
+        logger("store - No aliases to restore",aliases,"w/type",type)
         return true;
     } else {
         try {
-            const allRestored = await chatAliases.reduce(async (previousStatus,chatAlias) => {
-                logger("store - restoring",chatAlias)
-                const chatDecorJson = await AsyncStore.getChat(chatAlias)
-                if(!chatDecorJson || chatDecorJson == null) {
-                    logger("store - No chat found", chatAlias)
+            const allRestored = await aliases.reduce(async (previousStatus,alias) => {
+                logger("store - restoring",alias,"w/type",type)
+                const decorJson = await AsyncStore.getDecorator(alias,type)
+                if(!decorJson || decorJson == null) {
+                    logger("store - No decorator found",alias,"w/type",type)
                     previousStatus = previousStatus && false;
                     return previousStatus
                 } else {
-                    logger("store - putting restored chat in cache",chatAlias,":",chatDecorJson)
-                    const result = CachedStore.storeChat(chatAlias,chatDecorJson)
+                    logger("store - putting restored decorator in cache",alias,"w/type",type,":",decorJson)
+                    const result = CachedStore.storeDecorator(alias,type,decorJson)
                     previousStatus = previousStatus && result;
                     return previousStatus
                 }
             },true);
-            logger("were all chats restored",allRestored)
+            logger("were all decorators restored",allRestored)
             return allRestored;
         } catch (error) {
-            logger("store - getting chat from storage failed",error)
+            logger("store - getting decorators from storage failed",aliases,"w/type",type,error)
             return false;
         }
     }
 }
 
 
-export async function saveChat(chatAlias: string, chatDecorJson: string) {
-    if(await hasChat(chatAlias)) {
-        logger("store - Chat already exists.  Not adding",chatAlias)
+export async function saveDecorator(alias: string, type: string, decorJson: string) {
+    if(await hasDecorator(alias, type)) {
+        logger("store - decorator already exists.  Not adding",alias,"w/type",type)
         return false
     } else {
-        await storeChat(chatAlias, chatDecorJson);
-        logger("store - Chat added",chatAlias,":",chatDecorJson)
+        await storeDecorator(alias, type, decorJson);
+        logger("store - decorator added",alias,"type:",type,"json:",decorJson)
         return true
     }
 }
 
-async function storeChat(chatAlias: string, chatDecorJson: string) {
+async function storeDecorator(alias: string, type: string, decorJson: string) {
     const errMsgs = [];
-    errMsgs.push("store - can't store chat "+chatAlias);
-    errMsgs.push("chat "+chatDecorJson);
-    if(chatDecorJson) {
+    errMsgs.push("store - can't store decorator "+alias);
+    errMsgs.push("type "+type);
+    errMsgs.push("decorator "+decorJson);
+    if(decorJson) {
         try {
-            if(await AsyncStore.storeChat(chatAlias,chatDecorJson)) {
-                CachedStore.storeChat(chatAlias,chatDecorJson)
-                logger('store - cache stored chat',chatDecorJson)
+            if(await AsyncStore.storeDecorator(alias, type, decorJson)) {
+                CachedStore.storeDecorator(alias, type, decorJson)
+                logger('store - cache stored decorator',decorJson)
                 return true
             } else {
                 logger('store - could not store in async store')
