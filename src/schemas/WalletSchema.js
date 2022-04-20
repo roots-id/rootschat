@@ -13,18 +13,18 @@ export const WALLET_DIDS = "dids";
 //    revoked: false,
 //}
 
-export const KeyPair = {
-    name: "KeyPair",
-    properties: {
-        keyId: "string",
-        didIdx: "int",
-        keyType: "int",
-        keyIdx: "int",
-        privateKey: "string",
-        publicKey: "string",
-        revoked: "bool"
-    }
-}
+//export const REALM_KEYPAIR = {
+//    name: "KeyPair",
+//    properties: {
+//        keyId: "string",
+//        didIdx: "int",
+//        keyType: "int",
+//        keyIdx: "int",
+//        privateKey: "string",
+//        publicKey: "string",
+//        revoked: "bool"
+//    }
+//}
 
 //const did1 =
 //{
@@ -39,29 +39,29 @@ export const KeyPair = {
 //        keyRevocation0,
 //    ]
 //}
-export const Did = {
-    name: "Did",
-    properties: {
-        DID_ALIAS: "string",
-        didIdx: "int",
-        uriCanonical: "string",
-        DID_URI_LONG_FORM: "string",
-        operationHash: "string",
-        keyPairs: "KeyPair[]",
-    }
-}
+//export const REALM_DID = {
+//    name: "Did",
+//    properties: {
+//        DID_ALIAS: "string",
+//        didIdx: "int",
+//        uriCanonical: "string",
+//        DID_URI_LONG_FORM: "string",
+//        operationHash: "string",
+//        keyPairs: "KeyPair[]",
+//    }
+//}
 
 //    claim: {
 //        content: "{\"name\": \"RootsWallet\",\"degree\": \"law\",\"date\": \"2022-04-04 09:10:04\"}",
 //        subjectDid: didLong,
 //    },
-export const Claim = {
-    name: "Credential",
-    properties: {
-        content: "string",
-        subjectDid: "string",
-    }
-}
+//export const REALM_CLAIM = {
+//    name: "Credential",
+//    properties: {
+//        content: "string",
+//        subjectDid: "string",
+//    }
+//}
 
 //const cred = {
 //    alias: credAlias,
@@ -83,31 +83,49 @@ export const Claim = {
 //    operationHash: "",
 //    revoked: false,
 //}
-export const Credential = {
-    name: "Credential",
-    properties: {
-        alias: "string",
-        issuingDidAlias: "",
-        claim: "Claim",
-        verifiedCredential: "Credential",
-        batchId: "string",
-        credentialHash: "string",
-        operationHash: "string",
-        revoked: false,
-    }
-}
+//export const REALM_CREDENTIAL = {
+//    name: "Credential",
+//    properties: {
+//        alias: "string",
+//        issuingDidAlias: "",
+//        claim: "Claim",
+//        verifiedCredential: "Credential",
+//        batchId: "string",
+//        credentialHash: "string",
+//        operationHash: "string",
+//        revoked: false,
+//    }
+//}
 
+//export const REALM_WALLET = {
+//    name: "Wallet",
+//    properties: {
+//        _id: "string",
 //        mnemonic: "string[]",
 //        passphrase: "string",
-export const WALLET_SCHEMA = {
-    name: "Wallet",
-    properties: {
-        _id: "string",
-        mnemonic: "string[]",
-        passphrase: "string",
-        WALLET_DIDS: "Did[]",
-        importedCredentials: "Credential[]",
-        issuedCredentials: "Credential[]",
-    },
-    primaryKey: "_id",
-}
+//        WALLET_DIDS: "REALM_DID[]",
+//        importedCredentials: "REALM_CREDENTIAL[]",
+//        issuedCredentials: "REALM_CREDENTIAL[]",
+//    },
+//    primaryKey: "_id",
+//}
+
+//interface CREDENTIAL = {
+//    [alias: "string"]: string,
+//    [issuingDidAlias: "string"]: string,
+//    [claim: "string"]: string,
+//    [verifiedCredential: "string"]: "",
+//    batchId: "string",
+//    credentialHash: "string",
+//    operationHash: "string",
+//    revoked: false,
+//}
+
+//interface WALLET = {
+//    _id: "string",
+//    mnemonic: "string[]",
+//    passphrase: "string",
+//    WALLET_DIDS: "DID[]",
+//    importedCredentials: "CREDENTIAL[]",
+//    issuedCredentials: "CREDENTIAL[]",
+//}

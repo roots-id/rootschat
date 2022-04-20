@@ -8,8 +8,8 @@ import { Actions, ActionsProps, Bubble, ChatInput,
 //import emojiUtils from 'emoji-utils';
 
 import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages,
-    getChat, getFakePromise,
-    getFakePromiseAsync, getQuickReplyResultMessage, getUser, isDemo, isProcessing,
+    getChatDecorator, getFakePromise,
+    getFakePromiseAsync, getQuickReplyResultMessage, getUserDecorator, isDemo, isProcessing,
     processQuickReply,
     PROMPT_PUBLISH_MSG_TYPE, PUBLISHED_TO_PRISM, sendMessage, sendMessages, startChatSession,
     STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
@@ -21,7 +21,8 @@ const { PrismModule } = NativeModules;
 export default function ChatScreen({ route }) {
     console.log("ChatScreen - route params",route.params)
 //  const [ user, setUser ] = useState(user);
-    const chat = getChat(route.params.chatId);
+    const chat = getChatDecorator(route.params.chatId);
+    console.log("ChatScreen - got chatDecorator w/keys",Object.keys(chat))
 //    const [hasPermission, setHasPermission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
@@ -32,7 +33,7 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
         let isCancelled = false;
-
+        console.log("ChatScreen - useEffect",Object.keys(chat))
         const chatSession = startChatSession({
             chat: chat,
             onReceivedMessage: (message) => {
@@ -76,20 +77,22 @@ export default function ChatScreen({ route }) {
             },
         });
         if (chatSession.succeeded) {
+            console.log("chat session started")
             const session = chatSession.session; // Handle session
         }
         if (chatSession.failed) {
+            console.log("chat session failed")
             const error = chatSession.error; // Handle error
         }
-        getAllMessages(chat.id)
-            .then((result) => {
-                setMessages(result.paginator.items.map(mapMessage));
-                setLoading(false);
-            });
-        return () => {
-            isCancelled = true
-            chatSession.end
-        }
+//        console.log("Getting all messages")
+//        getAllMessages(chat.id)
+//            .then((result) => {
+//                setMessages(result.paginator.items.map(mapMessage));
+//                setLoading(false);
+//            });
+        return () =>
+            {chatSession.end
+            isCanceled = true;}
     }, [chat]);
 
     useEffect(() => {
@@ -101,7 +104,7 @@ export default function ChatScreen({ route }) {
     }, [processing]);
 
     useEffect(() => {
-            console.log("ChatScreen - Show system")
+            console.log("ChatScreen - getting all messages")
             getAllMessages(chat.id)
                     .then((result) => {
                         setMessages(result.paginator.items.map(mapMessage));
@@ -152,13 +155,15 @@ export default function ChatScreen({ route }) {
 //    }
 
     async function handleSend(pendingMsgs) {
-        const result = await sendMessages(chat, pendingMsgs, TEXT_MSG_TYPE, getUser(chat.id));
+        console.log("ChatScreen - handle send",pendingMsgs)
+        const result = await sendMessages(chat, pendingMsgs, TEXT_MSG_TYPE, getUserDecorator(chat.id));
 //        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMsgs));
     }
 
     //getFakePromiseAsync(10000);
 //processQuickReply(chat,reply)
     async function handleQuickReply(reply) {
+        console.log("ChatScreen - handle quick reply",reply)
         const result = await processQuickReply(chat,reply)
         console.log("ChatScreen - Quick Reply processing complete")
 //        await setMessages((prevMessages) =>
@@ -208,6 +213,7 @@ export default function ChatScreen({ route }) {
   }
 
     function getSource(message) {
+        //console.log("ChatScreen - getting source",message)
         if (message && message.currentMessage) {
           return message.currentMessage.audio ? message.currentMessage.audio : message.currentMessage.video ? message.currentMessage.video : null;
         }
@@ -237,6 +243,7 @@ export default function ChatScreen({ route }) {
 //    };
 
     function renderInputToolbar(props) {
+      //console.log("renderInputToolbar", props)
       return (
           <InputToolbar
               {...props}
@@ -295,6 +302,7 @@ export default function ChatScreen({ route }) {
 //  }
 
   if (loading) {
+    console.log("Loading....")
     return <Loading />;
   }
 
@@ -333,7 +341,7 @@ export default function ChatScreen({ route }) {
           renderBubble={renderBubble}
           renderUsernameOnMessage={true}
           showAvatarForEveryMessage={true}
-          user={mapUser(getUser(chat.id))}
+          user={mapUser(getUserDecorator(chat.id))}
       />
     </View>
   );
@@ -344,7 +352,7 @@ export default function ChatScreen({ route }) {
   //,      ...(message.type === BLOCKCHAIN_URI_MSG_TYPE) && {system: true}
   //<Text onPress={() => { alert('hello')}} style={{ fontStyle:'italic',color: 'red' }}>{}</Text>
   function mapMessage(message) {
-      //console.log("ChatScreen - Map message for gifted",message);
+      console.log("ChatScreen - Map message for gifted",message);
       mappedMsg={}
       mappedMsg["_id"] = message.id
       mappedMsg["text"] = message.body
@@ -377,7 +385,7 @@ export default function ChatScreen({ route }) {
   }
 
   function mapUser(user) {
-    //console.log("ChatScreen - Map User for gifted",user);
+    console.log("ChatScreen - Map User for gifted",user);
     return {
       _id: user.id,
       name: user.displayName,

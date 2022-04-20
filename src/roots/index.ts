@@ -1,6 +1,7 @@
-import * as store from '../store'
+import * as decorators from '../decorators'
 import { logger } from '../logging'
 import PrismModule from '../prism'
+import * as store from '../store'
 import * as walletSchema from '../schemas/WalletSchema'
 //import QRCode from 'qrcode'
 
@@ -51,7 +52,24 @@ const handlers = {};
 const allProcessing = [];
 
 //----------------- User -----------------
-export function getUser(userId) {
+async function createUserDecorator(didAlias: string) {
+    try {
+        if(getUserDecorator(didAlias)) {
+            console.error("roots - user already exists",didAlias)
+            return true;
+        } else {
+            logger("roots - chat user did not exist")
+            const result = store.createUserDisplay(didAlias,"You",personLogo)
+            logger("roots - created user",didAlias,"?",result)
+            return result;
+        }
+    } catch(error) {
+        console.error("Failed to create user",error)
+        return false
+    }
+}
+
+export function getUserDecorator(userId) {
     logger("roots - Getting user",userId)
     return store.getUserDisplay(userId);
 }
@@ -74,7 +92,8 @@ export async function loadWallet(walName,walPass) {
     const restored = await store.restoreWallet(walPass);
     //retrieving wallet pulls the object into memory here
     const rootsWal = getRootsWallet(walName)
-    if(restored && !(!rootsWal || rootsWal == null)) {
+    const loadedChats = loadChats();
+    if(restored && !(!rootsWal || rootsWal == null) && loadedChats) {
         logger("roots - loaded wallet",walName,"with walPass",walPass);
         return true
     } else {
@@ -129,11 +148,31 @@ export async function updateWallet(walName, walPass, walJson) {
 }
 
 //------------------ DIDs ----------------
+async function createDid(didAlias: string) {
+    try {
+        if(getDid(didAlias)) {
+            console.error("roots - Chat/DID already exists",didAlias)
+            return true;
+        } else {
+            logger("roots - DID does not exist, creating",didAlias)
+            const walletJson = store.getWallet(currentWal._id)
+            logger("roots - requesting chat/did from prism, w/wallet",walletJson)
+            const prismWalletJson = PrismModule.newDID(walletJson,didAlias)
+            logger("roots - Chat/prismDid added to wallet", prismWalletJson)
+            const saveResult = await updateWallet(currentWal._id,currentWal.passphrase,prismWalletJson)
+            return saveResult;
+        }
+    } catch(error) {
+        console.error("Failed to create chat DID",error)
+        return false
+    }
+}
+
 function getDid(didAlias) {
     logger("roots - getDid by alias",didAlias)
     const dids = currentWal[walletSchema.WALLET_DIDS];
     if(dids) {
-        logger("roots - current dids",dids)
+        logger("roots - current dids w/keys",Object.keys(dids))
         const findDid = dids.find(did => (did[walletSchema.DID_ALIAS] === didAlias));
         if(findDid) {
             logger("roots -  found did alias",didAlias,"w/keys:",Object.keys(findDid))
@@ -150,31 +189,52 @@ function getDid(didAlias) {
 }
 
 //------------------ Chats  --------------
-export async function createChat (chatName,titlePrefix) {
-    logger("roots - Creating chat",chatName,"w/ titlePrefix",titlePrefix)
-    if(!getDid(chatName)) {
-        logger("roots - Creating chat did existence check passed")
-        const prismWalletJson = PrismModule.newDID(store.getWallet(currentWal._id),chatName)
-        logger("roots - Chat w/prismDid wallet", prismWalletJson)
-        const saveResult = await updateWallet(currentWal._id,currentWal.passphrase,prismWalletJson)
-        if(saveResult) {
-            logger("roots - saved wallet, retrieving did for new chat")
-            const newDid = getDid(chatName);
-            logger("roots - new chat did is",newDid)
-            store.createUserDisplay(newDid[walletSchema.DID_ALIAS],"You",personLogo)
-            let newCh = store.saveChat(newDid[walletSchema.DID_ALIAS], titlePrefix)
-            sendMessage(newCh,"Welcome to *"+newDid[walletSchema.DID_ALIAS]+"*",TEXT_MSG_TYPE,store.getUserDisplay(ROOTS_BOT))
-            sendMessage(newCh,"Would you like to publish this chat to Prism?",
-                PROMPT_PUBLISH_MSG_TYPE,store.getUserDisplay(PRISM_BOT))
-            return newCh
-        } else{
-            console.error("Could not create chat, saving wallet failed");
-        }
+export async function createChat (chatAlias, titlePrefix) {
+    logger("roots - Creating chat",chatAlias,"w/ titlePrefix",titlePrefix)
+    const chatDidCreated = await createDid(chatAlias)
+    logger("roots - chat did created/existed?",chatDidCreated)
+    const chatDid = getDid(chatAlias)
+    logger("roots - chat did w/keys",Object.keys(chatDid))
+    //should be the same as chat alias, eating our own dog food
+    const chatDidAlias = chatDid[walletSchema.DID_ALIAS]
+    const chatDecorCreated = await createChatDecorator(chatDidAlias, titlePrefix)
+    logger("roots - chat decorator created/existed?",chatDecorCreated)
+    const chatDecor = getChatDecorator(chatDidAlias)
+    logger("roots - chat decorator w/keys",Object.keys(chatDecor))
+    //TODO what should the user defaults be?
+    const chatUserCreated = await createUserDecorator(chatDidAlias)
+    logger("roots - chat user created/existed?",chatUserCreated)
+    const chatUser = getUserDecorator(chatDidAlias)
+
+    if(chatDidCreated && chatDecorCreated && chatUserCreated) {
+        await sendMessage(chatDecor,"Welcome to *"+chatAlias+"*",TEXT_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+        await sendMessage(chatDecor,"Would you like to publish this chat to Prism?",
+            PROMPT_PUBLISH_MSG_TYPE,getUserDecorator(PRISM_BOT))
+        logger("Created chat and added welcome to chat",chatAlias,"with chatDid",chatDidAlias)
+        return true;
     } else {
-        console.error("Chat already exists",chatName)
+        console.error("Could not create chat",chatAlias);
+        return false
     }
 }
 
+async function createChatDecorator(chatAlias: string, titlePrefix: string) {
+    logger('roots - Creating a new chat decorator',chatAlias)
+    if(getChatDecorator(chatAlias)) {
+        logger('roots - chat decorator already exists',chatAlias)
+        return true
+    } else {
+        const chatDecor = decorators.createChat(chatAlias, [], titlePrefix)
+        const savedChat = await store.saveChat(chatAlias, JSON.stringify(chatDecor))
+        if(savedChat) {
+            logger('roots - new chat saved',chatAlias)
+            return true
+        } else {
+            logger('roots - could not save new chat',chatAlias)
+            return false
+        }
+    }
+}
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
@@ -183,7 +243,7 @@ export async function getAllChats () {
         await initDemo()
     }
     const promise1 = new Promise((resolve, reject) => {
-        let result = {paginator: {items: store.getChats()}};
+        let result = {paginator: {items: getChatDecorators()}};
         result.paginator.items.forEach(function (item, index) {
           logger("roots - getting chats",index+".",item.id);
         });
@@ -192,28 +252,55 @@ export async function getAllChats () {
     return promise1;
 }
 
-export function getChat(chatId) {
-    logger("roots - getting chat " + chatId);
-    const chats = store.getChats().filter(chat => {if(chat.id === chatId){logger("roots - chat found",chat.id);return true;}})
-    if(chats && chats.length>0) {
-        return chats[0]
+export function getChatDecorator(chatAlias: string) {
+    logger("roots - getting chat decorator",chatAlias)
+    const chatJson = store.getChat(chatAlias)
+    logger("roots - got chat",chatJson)
+    if(chatJson) {
+        const chat = JSON.parse(chatJson)
+        logger("roots - chat has keys",Object.keys(chat));
+        return chat;
     } else {
-        logger("roots - chat not found",chatId)
+       logger("roots - could not get chat decorator",chatAlias)
     }
-    return;
 }
 
-export function newChat(chatAlias: string, titlePrefix: string) {
-    logger('store - Creating a new chat',chatAlias)
-    chat[chatAlias] = {
-        id: chatAlias,
-        published: false,
-        title: titlePrefix + didAlias,
-        messages: [],
-    };
-    saveChat(chatJson)
-    logger('chat created',chatAlias)
-    return chatJson
+function getChatDecorators() {
+    logger("roots - getting chat decorators",String(chatDecorJsonArray))
+    const chatDecorJsonArray = store.getChats()
+    logger("roots - getting chat decorators",String(chatDecorJsonArray))
+    const chats = chatDecorJsonArray.map(chatDecorJson => JSON.parse(chatDecorJson))
+    return chats;
+}
+
+function getAllChatAliases(wallet) {
+    const dids = wallet[walletSchema.WALLET_DIDS];
+    if(!dids || dids == null || dids.length <= 0) {
+        logger("No dids to get chats for")
+        return [];
+    } else {
+        const chatAliases = dids.map(did => did[walletSchema.DID_ALIAS]);
+        logger("got chat aliases",String(chatAliases));
+        return chatAliases;
+    }
+}
+
+async function loadChats() {
+    try {
+        const chatAliases = getAllChatAliases(currentWal);
+        const result = await store.restoreChats(chatAliases);
+        if(result) {
+            logger("roots - successfully loaded chat decorators")
+            return true;
+        }
+        else {
+            console.error("roots - Failed to load chat decorators")
+            return false;
+        }
+    } catch(error) {
+        console.error("roots - Failed to load chat decorators",error)
+        return false;
+    }
 }
 
 export async function publishChat(chat) {
@@ -228,7 +315,7 @@ export async function publishChat(chat) {
         }
         isProcessing(false)
     } else {
-        logger(chat.id,"is already",PUBLISHED_TO_PRISM)
+        logger("roots - ",chat.id,"is already",PUBLISHED_TO_PRISM)
     }
     return chat
 }
@@ -250,17 +337,17 @@ function createMessage(idText,bodyText,statusText,timeInMillis,userDisplayJson,s
     }
 }
 
-function createMessageId(chatId,user,msgNum) {
-    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(chatId)+ID_SEPARATOR+String(msgNum);
+function createMessageId(chatAlias,user,msgNum) {
+    let msgId = "msg"+ID_SEPARATOR+String(user)+ID_SEPARATOR+String(chatAlias)+ID_SEPARATOR+String(msgNum);
     logger("roots - Generated msg id",msgId);
     return msgId;
 }
 
-export function getAllMessages(chatId) {
-    logger("roots - getting messages for chat",chatId);
-    const chatMsgs = store.getMessages(chatId)
+export function getAllMessages(chatAlias) {
+    logger("roots - getting messages for chat",chatAlias);
+    const chatMsgs = store.getMessages(chatAlias)
     chatMsgs.forEach(function (item, index) {
-      logger("roots - chat",chatId,"has message",index+".",item.id);
+      logger("roots - chat",chatAlias,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
@@ -270,11 +357,11 @@ export function getAllMessages(chatId) {
     return promise1;
 }
 
-function getMessagesSince(chatId,msgId) {
-    logger("roots - getting messages for chat",chatId,"since",msgId);
-    const chatMsgs = store.getMessages(chatId,msgId)
+function getMessagesSince(chatAlias,msgId) {
+    logger("roots - getting messages for chat",chatAlias,"since",msgId);
+    const chatMsgs = store.getMessages(chatAlias,msgId)
     chatMsgs.forEach(function (item, index) {
-      logger("roots - chat",chatId,"has message",index+".",item.id);
+      logger("roots - chat",chatAlias,"has message",index+".",item.id);
     });
 
     const promise1 = new Promise((resolve, reject) => {
@@ -325,16 +412,12 @@ export async function processQuickReply(chat,reply) {
         if(value === PROMPT_PUBLISH_MSG_TYPE) {
             const pubChat = await publishChat(chat);
             await sendMessage(pubChat,pubChat.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-                    TEXT_MSG_TYPE,store.getUserDisplay(PRISM_BOT))
-            const sentDid = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,store.getUserDisplay(PRISM_BOT),true);
-//            await sendMessage(chat,
-//                ,
-//                BLOCKCHAIN_URI_MSG_TYPE,
-//                getUserDisplay(PRISM_BOT),true);
+                    TEXT_MSG_TYPE,getUserDecorator(PRISM_BOT))
+            const sentDid = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserDecorator(PRISM_BOT),true);
             if(demo && sentDid) {
                 sendMessage(chat,
                     "You published your chat to Prism!",
-                    STATUS_MSG_TYPE,store.getUserDisplay(ROOTS_BOT))
+                    STATUS_MSG_TYPE,getUserDecorator(ROOTS_BOT))
                 await createDemoCredential(chat)
             }
         } else if(value.startsWith(PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE)) {
@@ -374,11 +457,11 @@ async function createCredential(chat,cred) {
     if(savedWal) {
         await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
               STATUS_MSG_TYPE,
-              store.getUserDisplay(ROOTS_BOT))
+              getUserDecorator(ROOTS_BOT))
         //const code = await QRCode.toDataURL()
         await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
             CREDENTIAL_JSON_MSG_TYPE,
-            store.getUserDisplay(PRISM_BOT),true)
+            getUserDecorator(PRISM_BOT),true)
 
     }
     isProcessing(false)
@@ -407,8 +490,8 @@ function getCredential(credAlias) {
     return;
 }
 
-function getCredentialAlias(chatId) {
-    return chatId + PUBLISHED_PRISM_CHAT_CREDENTIAL
+function getCredentialAlias(chatAlias) {
+    return chatAlias + PUBLISHED_PRISM_CHAT_CREDENTIAL
 }
 
 // ------------------ Session ---------------
@@ -496,10 +579,6 @@ async function initDemo() {
 async function initDemoIntro() {
     logger("roots - Init demo intro");
     const chat = await createChat("Introduction Chat","Under Construction - ")
-//    sendMessage(chat,
-//        "system message",
-//        STATUS_MSG_TYPE,
-//        getUserDisplay(PRISM_BOT),true);
 }
 
 export async function createDemoCredential(chat) {
@@ -510,11 +589,11 @@ export async function createDemoCredential(chat) {
             store.getCredRequests()[credAlias]=CRED_SENT;
             sendMessage(chat,
                 "To celebrate your publishing achievement, can we send you a verifiable credential?",
-                PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,store.getUserDisplay(ROOTS_BOT))
+                PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDecorator(ROOTS_BOT))
         } else if (store.getCredRequests()[credAlias] === CRED_REJECTED) {
             sendMessage(chat,
                 "No problem! Your identity wallet is under your control.",
-                STATUS_MSG_TYPE,store.getUserDisplay(ROOTS_BOT))
+                STATUS_MSG_TYPE,getUserDecorator(ROOTS_BOT))
         } else if (store.getCredRequests()[credAlias] === CRED_ACCEPTED) {
             const didLong = currentWal[walletSchema.WALLET_DIDS][currentWal[walletSchema.WALLET_DIDS].length-1][walletSchema.DID_URI_LONG_FORM]
             logger("roots - Creating demo credential for chat",chat.id,"w/long form did",didLong)
@@ -570,16 +649,16 @@ async function initDemoAchievements() {
 
     sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
       STATUS_MSG_TYPE,
-      store.getUserDisplay(ROOTS_BOT))
+      getUserDecorator(ROOTS_BOT))
     sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Opened RootsWallet}",
       CREDENTIAL_JSON_MSG_TYPE,
-      store.getUserDisplay(ROOTS_BOT))
+      getUserDecorator(ROOTS_BOT))
     sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Clicked Example!",
       STATUS_MSG_TYPE,
-      store.getUserDisplay(ROOTS_BOT))
+      getUserDecorator(ROOTS_BOT))
     sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Clicked Example}",
       CREDENTIAL_JSON_MSG_TYPE,
-      store.getUserDisplay(ROOTS_BOT))
+      getUserDecorator(ROOTS_BOT))
 }
 
 async function initDemoLibrary() {

@@ -1,19 +1,29 @@
 import { logger } from '../logging'
 
-let cachedChats: {
-     [id: string]: string,
-     [published: string]: bool,
-     [title: string]: string,
-     [messages: string]: string[]
- } = {}; = {};
-
-
+let cachedChats: {[chatAlias: string]: string } = {};
 let cachedWallets: { [walName: string]: string } = {};
 
-export function getChat(chatName: string) {
-    const chatJson = cachedChat[chatName]
-    logger("CachedStore - ",chatName,"in cache is",chatJson)
+export function getChat(chatAlias: string) {
+    const chatJson = cachedChats[chatAlias]
+    logger("CachedStore - get",chatAlias,"in cache is",chatJson)
     return chatJson;
+}
+
+export function getChats() {
+    const keys = Object.keys(cachedChats)
+    logger("CachedStore - getting chats",keys)
+    const chats = []
+    if(!keys || keys == null || keys.length <= 0) {
+        logger("CachedStore - No chats found");
+        return chats;
+    } else {
+        logger("CachedStore - # of chats",keys.length);
+        keys.forEach(chatAlias => {
+            logger("CachedStore - getting chat",chatAlias);
+            chats.push(cachedChats[chatAlias])
+        })
+        return chats;
+    }
 }
 
 export function getWallet(walName: string) {
@@ -24,13 +34,14 @@ export function getWallet(walName: string) {
 
 export function hasChat(chatAlias: string) {
     const chatJson = getChat(chatAlias)
-    const hasChat = !(!chatJson || chatJson == null);
-    if(hasChat) {
-        logger("CachedStore - has chat",chatJson)
+    const noChat = (!chatJson || chatJson == null);
+    if(noChat) {
+        logger("CachedStore - does not have chat",chatAlias)
+        return false
     } else {
-        logger("CachedStore - no chat found for alias",chatAlias)
+        logger("CachedStore - has chat",chatJson)
+        return true
     }
-    return hasChat;
 }
 
 export function hasWallet(walName: string) {

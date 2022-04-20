@@ -13,7 +13,7 @@ import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import StartChatScreen from '../screens/StartChatScreen';
 
-import { getChat, getRootsWallet, loadWallet, storageStatus, hasWallet, TEST_WALLET_NAME } from '../roots'
+import { getChatDecorator, getRootsWallet, loadWallet, storageStatus, hasWallet, TEST_WALLET_NAME } from '../roots'
 
 const Stack = createStackNavigator();
 
@@ -142,7 +142,7 @@ export default function AuthStack() {
                                 name="Chat"
                                 component={ChatScreen}
                                 options={({ route }) => ({
-                                    headerTitle: (props) => <LogoTitle {...props} title={getChat(route.params.chatId).title}/>
+                                    headerTitle: (props) => <LogoTitle {...props} title={getChatDecorator(route.params.chatId).title}/>
                                 })}
                             />
                 </Stack.Group>
@@ -170,6 +170,5 @@ function LogoTitle(...props) {
             </Text>
         </View>
     </React.Fragment>
-    //{getChat(route.params.chatId).title}
   );
 }

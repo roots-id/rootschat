@@ -1,14 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logging'
 
-export async function getChat(chatName: string) {
+export async function getChat(chatAlias: string) {
   try {
-    const chatJson = await AsyncStorage.getItem(chatName)
+    const chatJson = await AsyncStorage.getItem(chatAlias)
     if(!chatJson || chatJson == null) {
-        logger("AsyncStore - no chat found for name",chatName)
+        logger("AsyncStore - no chat found for name",chatAlias)
         return null;
     } else {
-        logger("AsyncStore - chat found",chatName)
+        logger("AsyncStore - chat found",chatAlias)
         return chatJson
     }
   } catch(e) {
@@ -35,8 +35,8 @@ export async function getWallet(walName: string) {
   return null;
 }
 
-export async function hasChat(chatName: string) {
-    const chatJson = await getChat(chatName)
+export async function hasChat(chatAlias: string) {
+    const chatJson = await getChat(chatAlias)
     const hasChat = !(!chatJson || chatJson == null);
     if(hasChat) {
         logger("AsyncStore - has chat",chatJson)
@@ -70,8 +70,8 @@ export async function status() {
 
 export async function storeChat(chatAlias: string,chatJson: string) {
     try {
-        logger('AsyncStore - start storing chat',chatName)
-        const oldChat = await AsyncStorage.setItem(chatName, chatJson)
+        logger('AsyncStore - start storing chat',chatAlias)
+        const oldChat = await AsyncStorage.setItem(chatAlias, chatJson)
         if(oldChat && oldChat !== null) {
           logger("AsyncStore - Replace previous chat",oldChat)
         }
