@@ -7,7 +7,7 @@ import { Actions, ActionsProps, Bubble, ChatInput,
 //import { BarCodeScanner } from 'expo-barcode-scanner';
 //import emojiUtils from 'emoji-utils';
 
-import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getAllMessages,
+import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getMessages,
     getChatDecorator, getFakePromise,
     getFakePromiseAsync, getQuickReplyResultMessage, getUserDecorator, isDemo, isProcessing,
     processQuickReply,
@@ -104,12 +104,10 @@ export default function ChatScreen({ route }) {
     }, [processing]);
 
     useEffect(() => {
-            console.log("ChatScreen - getting all messages")
-            getAllMessages(chat.id)
-                    .then((result) => {
-                        setMessages(result.paginator.items.map(mapMessage));
-                        setLoading(false);
-                    });
+        console.log("ChatScreen - getting all messages")
+        const msgs = {paginator: {items: getMessages(chat.id)}}
+        setMessages(msgs.paginator.items.map(mapMessage));
+        setLoading(false);
     }, [showSystem]);
 
 //    useEffect(() => {
@@ -357,7 +355,7 @@ export default function ChatScreen({ route }) {
       mappedMsg["_id"] = message.id
       mappedMsg["text"] = message.body
       mappedMsg["createdAt"] = new Date(message.createdTime)
-      mappedMsg["user"] = mapUser(message.user)
+      mappedMsg["user"] = mapUser(getUserDecorator(message.user))
       if(message["image"]) {
         mappedMsg["image"] = message["image"]
       }

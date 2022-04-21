@@ -1,17 +1,31 @@
 import { logger } from '../logging';
 
 export const DECORATOR_TYPE_CHAT = "chat"
+export const DECORATOR_TYPE_MESSAGE = "msg"
 export const DECORATOR_TYPE_USER = "user"
 
-export function createChat(chatAlias: string, messages: string[], titlePrefix?: string) {
+
+export function createChat(chatAlias: string, titlePrefix?: string) {
     const chat = {
          id: chatAlias,
          published: false,
          title: titlePrefix+chatAlias,
-         messages: messages,
     }
     logger("decorators - created chat decorator w/keys",Object.keys(chat))
     return chat;
+}
+
+export function createMessage(idText: string,bodyText: string,statusText: string,timeInMillis: number,userId: string,system?: boolean=false) {
+    const msg = {
+        id: idText,
+        body: bodyText,
+        type: statusText,
+        createdTime: timeInMillis,
+        user: userId,
+        system: system,
+    }
+    logger("decorators - created msg decorator w/keys",Object.keys(msg))
+    return msg;
 }
 
 export function createUser(userAlias: string, userName: string, userPicUrl: string) {

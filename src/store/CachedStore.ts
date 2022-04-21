@@ -1,34 +1,25 @@
-import { logger } from '../logging'
+import { logger, warn } from '../logging'
 
 let cachedDecorators: {[alias: string]: string } = {};
 let cachedWallets: { [walName: string]: string } = {};
 
-function getCacheKey(alias: string, type: string) {
-    const key = type+alias
-    logger("CacheStore - made key",key)
-    return key
-}
-
-export function getDecorator(alias: string, type: string) {
-    const decoratorJson = cachedDecorators[getCacheKey(alias,type)]
-    logger("CachedStore - get",alias,"w/type",type,"in cache is",decoratorJson)
+export function getDecorator(alias: string) {
+    const decoratorJson = cachedDecorators[alias]
+    logger("CachedStore - get",alias,"in cache is",decoratorJson)
     return decoratorJson;
 }
 
-export function getDecorators(type: string) {
-    //TODO improve identifying type, w/o using startswith
-    const keys = Object.keys(cachedDecorators).filter((key) => key.startsWith(type))
-    logger("CachedStore - getting decorators",keys,"w/type",type)
+export function getDecorators(regex: RegExp) {
+    const keys = Object.keys(cachedDecorators).filter((key) => regex.test(key))
+    logger("CachedStore - getting decorators",keys,"w/regex",regex)
     const decorators = []
     if(!keys || keys == null || keys.length <= 0) {
-        logger("CachedStore - No decorators found w/type",type);
+        logger("CachedStore - No decorators found w/regex",regex);
         return decorators;
     } else {
-        logger("CachedStore - # of decorators",keys.length,"w/type",type);
-        keys.forEach(alias => {
-            logger("CachedStore - getting decorator",alias,"w/type",type);
-            decorators.push(cachedDecorators[alias])
-        })
+        logger("CachedStore - retrieving # of decorators",keys.length,"w/regex",regex);
+        decorators.concat(keys.map(key => cachedDecorators[key]))
+        logger("CachedStore - retrieved # of decorators",decorators.length,"w/regex",regex);
         return decorators;
     }
 }
@@ -39,14 +30,14 @@ export function getWallet(walName: string) {
     return walJson;
 }
 
-export function hasDecorator(alias: string, type: string) {
-    const decoratorJson = getDecorator(alias,type)
+export function hasDecorator(alias: string) {
+    const decoratorJson = getDecorator(alias)
     const noDecorator = (!decoratorJson || decoratorJson == null);
     if(noDecorator) {
-        logger("CachedStore - does not have decorator",alias,"w/type",type)
+        logger("CachedStore - does not have decorator",alias)
         return false
     } else {
-        logger("CachedStore - has decorator",alias,"w/type",type,decoratorJson)
+        logger("CachedStore - has decorator",alias,decoratorJson)
         return true
     }
 }
@@ -67,17 +58,17 @@ export async function status() {
     logger("CachedStore - decorators:",Object.keys(cachedDecorators))
 }
 
-export function storeDecorator(alias: string, type: string, decoratorJson: string) {
+export function storeDecorator(alias: string, decoratorJson: string) {
     try {
-        logger("CachedStore - storing decorator",alias,"w/type",type,":",decoratorJson)
-        const oldDecorator = cachedDecorators[getCacheKey(alias,type)]
-        cachedDecorators[getCacheKey(alias,type)] = decoratorJson
+        logger("CachedStore - storing decorator",alias,":",decoratorJson)
+        const oldDecorator = cachedDecorators[alias]
+        cachedDecorators[alias] = decoratorJson
         if(oldDecorator && oldDecorator !== null) {
-            logger("CachedStore - Replace previous decoratorJson",alias,"w/type",type,oldDecorator)
+            logger("CachedStore - Replace previous decoratorJson",alias,oldDecorator)
         }
         return true;
     } catch(error) {
-        console.error("CachedStore - Could not store decorator",alias,"w/type",type,error)
+        console.error("CachedStore - Could not store decorator",alias,error)
         return false;
     }
     return false;

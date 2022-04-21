@@ -1,27 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logging'
 
-export async function getDecorator(alias: string, type: string) {
+export async function getDecorator(alias: string) {
   try {
-    const decoratorJson = await AsyncStorage.getItem(getKey(alias,type))
+    const decoratorJson = await AsyncStorage.getItem(alias)
     if(!decoratorJson || decoratorJson == null) {
-        logger("AsyncStore - no decorator found for name",alias,"w/type",type)
+        logger("AsyncStore - no decorator found for name",alias)
         return null;
     } else {
-        logger("AsyncStore - decorator found",alias,"w/type",type)
+        logger("AsyncStore - decorator found",alias)
         return decoratorJson
     }
   } catch(e) {
-    console.error("AsyncStore - Could not get async decorator",alias,"w/type",type,error)
+    console.error("AsyncStore - Could not get async decorator",alias,error)
     return null;
   }
   return null;
-}
-
-function getKey(alias: string, type: string) {
-    const key = type+alias
-    logger("AsyncStore - made key",key)
-    return key
 }
 
 export async function getWallet(walName: string) {
@@ -41,13 +35,13 @@ export async function getWallet(walName: string) {
   return null;
 }
 
-export async function hasDecorator(alias: string, type: string) {
-    const decoratorJson = await getDecorator(alias,type)
+export async function hasDecorator(alias: string) {
+    const decoratorJson = await getDecorator(alias)
     const hasDecorator = !(!decoratorJson || decoratorJson == null);
     if(hasDecorator) {
-        logger("AsyncStore - has decorator",alias,"w/type",type,decoratorJson)
+        logger("AsyncStore - has decorator",alias,decoratorJson)
     } else {
-        logger("AsyncStore - no decorator found",alias,"w/type",type)
+        logger("AsyncStore - no decorator found",alias)
     }
     return hasDecorator;
 }
@@ -74,16 +68,16 @@ export async function status() {
   logger("AsyncStore - keys:",keys)
 }
 
-export async function storeDecorator(alias: string, type: string, decoratorJson: string) {
+export async function storeDecorator(alias: string, decoratorJson: string) {
     try {
-        logger('AsyncStore - start storing decorator',alias,"w/type",type)
-        const oldDecorator = await AsyncStorage.setItem(getKey(alias,type), decoratorJson)
+        logger('AsyncStore - start storing decorator',alias)
+        const oldDecorator = await AsyncStorage.setItem(alias, decoratorJson)
         if(oldDecorator && oldDecorator !== null) {
-          logger("AsyncStore - Replace previous decorator",alias,"w/type",type,oldDecorator)
+          logger("AsyncStore - Replace previous decorator",alias,oldDecorator)
         }
         return true;
     } catch(error) {
-        console.error("AsyncStore - Could not store async decorator",alias,"w/type",type,error)
+        console.error("AsyncStore - Could not store async decorator",alias,error)
         return false;
     }
     return false;

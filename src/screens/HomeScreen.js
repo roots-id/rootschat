@@ -22,7 +22,7 @@ export default function HomeScreen({navigation}) {
                 setLoading(false);
             }
         } catch(error) {
-            console.error("HomeScreen - Could not getAllChats",error)
+            console.error("HomeScreen - Could not getAllChats",error,error.stack)
         }
     }, [isFocused,loading]);
 
