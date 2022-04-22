@@ -18,6 +18,19 @@ export async function getDecorator(alias: string) {
   return null;
 }
 
+export async function getStoredKeys(regex: RegExp) {
+    const keys = await AsyncStorage.getAllKeys()
+    const filteredKeys = keys.filter((key) => regex.test(key))
+    logger("AsyncStore - getting stored keys",filteredKeys,"w/regex",regex)
+    if(!filteredKeys || filteredKeys == null || filteredKeys.length <= 0) {
+        logger("AsyncStore - No keys found w/regex",regex);
+        return filteredKeys;
+    } else {
+        logger("AsyncStore - retrieved # of keys",filteredKeys.length,"w/regex",regex);
+        return filteredKeys;
+    }
+}
+
 export async function getWallet(walName: string) {
   try {
     const walJson = await AsyncStorage.getItem(walName)

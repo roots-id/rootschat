@@ -52,9 +52,10 @@ const allProcessing = [];
 
 export async function loadAll(walName: string,walPass: string) {
     const wallet = await loadWallet(walName, walPass);
-    const chats = await loadChats();
-    const users = await loadUsers();
-    const messages = await loadMessages();
+    const emptyAlias = "";
+    const chats = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_CHAT)+"*"))
+    const users = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_USER)+"*"));
+    const messages = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_MESSAGE)+"*"));
     return wallet && chats && users && messages;
 }
 
@@ -74,7 +75,7 @@ async function createUserDecorator(alias: string, name: string, pic: string) {
             return result;
         }
     } catch(error) {
-        console.error("Failed to create user",alias,error.stack)
+        console.error("Failed to create user",alias,error,error.stack)
         return false
     }
 }
@@ -106,7 +107,7 @@ async function loadUsers() {
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load chat decorators",error.stack)
+        console.error("roots - Failed to load chat decorators",error,error.stack)
         return false;
     }
 }
@@ -333,7 +334,7 @@ async function loadChats() {
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load chat decorators",error.stack)
+        console.error("roots - Failed to load chat decorators",error,error.stack)
         return false;
     }
 }
@@ -426,21 +427,19 @@ export function getMessageDecorators(chatAlias: string) {
     return chatMsgs;
 }
 
-async function loadMessages() {
+async function loadDecorators(regex: RegExp) {
     try {
-        const aliases = getAllDidAliases(currentWal);
-        getStorageKeys(aliases,decorators.DECORATOR_TYPE_MESSAGE)
-        const result = await store.restoreDecorators();
+        const result = store.restoreByRegex(regex)
         if(result) {
-            logger("roots - successfully loaded chat decorators",aliases)
+            logger("roots - successfully loaded decorator w/regex",regex)
             return true;
         }
         else {
-            console.error("roots - Failed to load chat decorators",aliases)
+            console.error("roots - Failed to load decorators w/regex",regex)
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load chat decorators",error.stack)
+        console.error("roots - Failed to load decorators w/regex",regex,error,error.stack)
         return false;
     }
 }
