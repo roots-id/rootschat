@@ -53,10 +53,20 @@ const allProcessing = [];
 export async function loadAll(walName: string,walPass: string) {
     const wallet = await loadWallet(walName, walPass);
     const emptyAlias = "";
-    const chats = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_CHAT)+"*"))
-    const users = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_USER)+"*"));
-    const messages = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_MESSAGE)+"*"));
-    return wallet && chats && users && messages;
+    if(wallet) {
+        const chats = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_CHAT)+"*"))
+        const users = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_USER)+"*"));
+        const messages = await loadDecorators(new RegExp(getStorageKey(emptyAlias,decorators.DECORATOR_TYPE_MESSAGE)+"*"));
+        if(wallet && chats && users && messages) {
+            return wallet
+        } else {
+            logger("Failed to load all decorators")
+            return;
+        }
+    } else {
+        logger("Failed to load wallet")
+        return;
+    }
 }
 
 //----------------- User -----------------
@@ -429,9 +439,9 @@ export function getMessageDecorators(chatAlias: string) {
 
 async function loadDecorators(regex: RegExp) {
     try {
-        const result = store.restoreByRegex(regex)
+        const result = await store.restoreByRegex(regex)
         if(result) {
-            logger("roots - successfully loaded decorator w/regex",regex)
+            logger("roots - successfully loaded decorators w/regex",regex)
             return true;
         }
         else {

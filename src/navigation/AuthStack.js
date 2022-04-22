@@ -13,7 +13,7 @@ import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import StartChatScreen from '../screens/StartChatScreen';
 
-import { getChatDecorator, getRootsWallet, loadWallet, storageStatus, hasWallet, TEST_WALLET_NAME } from '../roots'
+import { getChatDecorator, getRootsWallet, storageStatus, hasWallet, TEST_WALLET_NAME } from '../roots'
 
 const Stack = createStackNavigator();
 

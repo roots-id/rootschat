@@ -64,10 +64,11 @@ export async function hasWallet(walName: string) {
     const hasWal = !(!walJson || walJson == null);
     if(hasWal) {
         logger("AsyncStore - has wallet",walJson)
+        return true;
     } else {
         logger("AsyncStore - no wallet found")
+        return false;
     }
-    return hasWal;
 }
 
 export async function status() {

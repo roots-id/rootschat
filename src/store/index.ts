@@ -159,7 +159,7 @@ export function getDecorators(regex: RegExp) {
 
 export async function restoreByRegex(regex: RegExp) {
     logger("store - restoring keys by regex",regex)
-    keys = await AsyncStore.getStoredKeys(regex)
+    const keys = await AsyncStore.getStoredKeys(regex)
     logger("store - restored keys by regex",regex,":\n",keys)
     return restoreDecorators(keys)
 }
