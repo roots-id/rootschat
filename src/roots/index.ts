@@ -54,7 +54,8 @@ export async function loadAll(walName: string,walPass: string) {
     const wallet = await loadWallet(walName, walPass);
     const chats = await loadChats();
     const users = await loadUsers();
-    return wallet && chats && users;
+    const messages = await loadMessages();
+    return wallet && chats && users && messages;
 }
 
 //----------------- User -----------------
@@ -384,37 +385,64 @@ function createMessageId(chatAlias: string,userId: string,msgNum: number) {
 }
 
 export function getMessages(chatAlias: string, startFromMsgId?: string) {
-    const chJsonMsgs = getMessageDecorators(chatAlias)
-    let chMsgs = chJsonMsgs.map(jsonMsg => JSON.parse(jsonMsg))
+    const chMsgs = getMessageDecorators(chatAlias)
     logger("roots - Getting chat",chatAlias,chMsgs.length,"messages")
-
-    if(startFromMsgId) {
-        logger("roots - Getting chat",chatAlias,chMsgs.length,"messages since",startFromMsgId)
-        for(i = 0; i < chMsgs.length; i++) {
-            if(chMsgs[i]["id"] === startFromMsgId) {
-                if(i < chMsgs.length-1) {
-                    const chMsgs = chMsgs.slice(i+1,chMsgs.length)
-                    logger("roots - Getting chat",chatAlias,"starting from",i+1,"to",chMsgs.length)
-                    return chMsgs
-                } else {
-                    console.error("roots - start message",startFromMsgId,"not found for chat",chatAlias)
-                    return []
-                }
-            }
-        }
-    } else {
+    chMsgs.forEach(msg => logger("roots - got message w/keys",Object.msg))
+    if(!startFromMsgId) {
         return chMsgs;
+    } else {
+        logger("roots - Getting chat messages since",startFromMsgId)
+        i = -1
+        const findMsg = chMsgs.find(
+            (msg) =>
+            {
+                i++;
+                if(msg.id == startFromMsgId) return msg;
+            }
+        )
+        const slicedMsgs = chMsgs.slice(i+1,chMsgs.length)
+        if(!slicedMsgs || slicedMsgs.length <= 0) {
+            console.error("roots - start message",startFromMsgId,"not found for chat",chatAlias)
+            return []
+        } else {
+            logger("roots - Getting chat",chatAlias,"starting from",i+1,"to",slicedMsgs.length)
+            return slicedMsgs
+        }
     }
 }
 
 export function getMessageDecorators(chatAlias: string) {
     logger("roots - getting message decorators for chat",chatAlias)
-    const msgRegex = new RegExp(decorators.DECORATOR_TYPE_MESSAGE+chatAlias+'*')
+    const msgRegex = new RegExp(getStorageKey(chatAlias,decorators.DECORATOR_TYPE_MESSAGE)+'*')
     const msgDecorJsonArray = store.getDecorators(msgRegex)
-    logger("roots - got chat decorators",String(msgDecorJsonArray))
-    const chatMsgs = msgDecorJsonArray.map(msgDecorJson => JSON.parse(msgDecorJson));
-    chatMsgs.sort((a,b) => a.createdTime)
+    logger("roots - got msg decorators",msgDecorJsonArray.length)
+    const chatMsgs = msgDecorJsonArray.map(
+        (msgDecorJson) => {
+            logger("parsing msg json",msgDecorJson)
+            return JSON.parse(msgDecorJson);
+        }
+    )
+    chatMsgs.sort((a,b) => (a.createdTime < b.createdTime))
     return chatMsgs;
+}
+
+async function loadMessages() {
+    try {
+        const aliases = getAllDidAliases(currentWal);
+        getStorageKeys(aliases,decorators.DECORATOR_TYPE_MESSAGE)
+        const result = await store.restoreDecorators();
+        if(result) {
+            logger("roots - successfully loaded chat decorators",aliases)
+            return true;
+        }
+        else {
+            console.error("roots - Failed to load chat decorators",aliases)
+            return false;
+        }
+    } catch(error) {
+        console.error("roots - Failed to load chat decorators",error.stack)
+        return false;
+    }
 }
 
 export async function sendMessages(chat,msgs,msgType,userDisplay) {

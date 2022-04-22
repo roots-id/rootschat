@@ -12,13 +12,13 @@ export function getDecorator(alias: string) {
 export function getDecorators(regex: RegExp) {
     const keys = Object.keys(cachedDecorators).filter((key) => regex.test(key))
     logger("CachedStore - getting decorators",keys,"w/regex",regex)
-    const decorators = []
+    let decorators = []
     if(!keys || keys == null || keys.length <= 0) {
         logger("CachedStore - No decorators found w/regex",regex);
         return decorators;
     } else {
         logger("CachedStore - retrieving # of decorators",keys.length,"w/regex",regex);
-        decorators.concat(keys.map(key => cachedDecorators[key]))
+        decorators = keys.map(key => getDecorator(key))
         logger("CachedStore - retrieved # of decorators",decorators.length,"w/regex",regex);
         return decorators;
     }

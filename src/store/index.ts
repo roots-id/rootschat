@@ -151,7 +151,8 @@ export function getDecorators(regex: RegExp) {
         logger('store - no cached decorators found')
         return decorators;
     } else {
-        logger('store - cached decorators found',decorators)
+        logger('store - cached decorators found',decorators.length)
+        decorators.forEach(decorator => logger("decorator",decorator))
         return decorators;
     }
 }

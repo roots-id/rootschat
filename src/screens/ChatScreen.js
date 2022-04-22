@@ -105,8 +105,11 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
         console.log("ChatScreen - getting all messages")
-        const msgs = {paginator: {items: getMessages(chat.id)}}
-        setMessages(msgs.paginator.items.map(mapMessage));
+        const msgs = getMessages(chat.id)
+        console.log("ChatScreen - got",msgs.length,"msgs")
+        msgs.forEach(msg => console.log("ChatScreen - got msg w/keys",Object.keys(msg)))
+        //const msgs = {paginator: {items: }}
+        setMessages(msgs.map(msg => mapMessage(msg)));
         setLoading(false);
     }, [showSystem]);
 
