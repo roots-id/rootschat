@@ -1,9 +1,10 @@
 import { logger } from '../logging';
 
-export const DECORATOR_TYPE_CHAT = "chat"
-export const DECORATOR_TYPE_MESSAGE = "msg"
-export const DECORATOR_TYPE_USER = "user"
-
+export const DECORATOR_TYPE_CHAT = "rootsChatType"
+export const DECORATOR_TYPE_MESSAGE = "rootsMsgType"
+export const DECORATOR_TYPE_CREDENTIAL = "rootsCredentialType"
+export const DECORATOR_TYPE_CRED_REQUEST = "rootsCredRequestType"
+export const DECORATOR_TYPE_USER = "rootsUserType"
 
 export function createChat(chatAlias: string, titlePrefix?: string) {
     const chat = {

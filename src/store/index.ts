@@ -5,7 +5,6 @@ import * as SecureStore from 'expo-secure-store';
 import { logger } from '../logging'
 
 const quickReplyResults = {}
-const credRequests = {}
 
 export async function status() {
     logger("store - Prompting for status messages")
@@ -247,8 +246,4 @@ export function getQuickReplyResult(replyId: string) {
 export function addQuickReplyResult(replyId: string,result: string) {
     logger("store - Adding quick reply result",replyId,"=",result)
     quickReplyResults[replyId]=result
-}
-
-export function getCredRequests() {
-    return credRequests
 }

@@ -7,12 +7,12 @@ import { Actions, ActionsProps, Bubble, ChatInput,
 //import { BarCodeScanner } from 'expo-barcode-scanner';
 //import emojiUtils from 'emoji-utils';
 
-import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, CREDENTIAL_JSON_MSG_TYPE, getMessages,
+import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, getMessages,
     getChatDecorator, getFakePromise,
     getFakePromiseAsync, getQuickReplyResultMessage, getUserDecorator, isDemo, isProcessing,
     processQuickReply,
-    PROMPT_PUBLISH_MSG_TYPE, PUBLISHED_TO_PRISM, sendMessage, sendMessages, startChatSession,
-    STATUS_MSG_TYPE, TEXT_MSG_TYPE } from '../roots';
+    sendMessage, sendMessages, startChatSession,
+    TEXT_MSG_TYPE } from '../roots';
 import Loading from '../components/Loading';
 import SlackMessage from '../components/SlackMessage';
 
@@ -166,7 +166,7 @@ export default function ChatScreen({ route }) {
     async function handleQuickReply(reply) {
         console.log("ChatScreen - handle quick reply",reply)
         const result = await processQuickReply(chat,reply)
-        console.log("ChatScreen - Quick Reply processing complete")
+        console.log("ChatScreen - Quick Reply processing complete", result)
 //        await setMessages((prevMessages) =>
 //                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }
