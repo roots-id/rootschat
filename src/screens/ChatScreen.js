@@ -21,8 +21,8 @@ const { PrismModule } = NativeModules;
 export default function ChatScreen({ route }) {
     console.log("ChatScreen - route params",route.params)
 //  const [ user, setUser ] = useState(user);
-    const chat = getChatDecorator(route.params.chatId);
-    console.log("ChatScreen - got chatDecorator w/keys",Object.keys(chat))
+    const [chat, setChat] = useState(getChatDecorator(route.params.chatId));
+    console.log("ChatScreen - got chatDecorator ",chat)
 //    const [hasPermission, setHasPermission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
@@ -33,7 +33,7 @@ export default function ChatScreen({ route }) {
 
     useEffect(() => {
         let isCancelled = false;
-        console.log("ChatScreen - useEffect",Object.keys(chat))
+        console.log("ChatScreen - useEffect",chat)
         const chatSession = startChatSession({
             chat: chat,
             onReceivedMessage: (message) => {
@@ -165,8 +165,11 @@ export default function ChatScreen({ route }) {
 //processQuickReply(chat,reply)
     async function handleQuickReply(reply) {
         console.log("ChatScreen - handle quick reply",reply)
-        const result = await processQuickReply(chat,reply)
-        console.log("ChatScreen - Quick Reply processing complete", result)
+        const pubChat = await processQuickReply(chat,reply)
+        if(pubChat) {
+            setChat(pubChat)
+            console.log("ChatScreen - Quick Reply processing complete", pubChat)
+        }
 //        await setMessages((prevMessages) =>
 //                GiftedChat.append(prevMessages,resultMessages.map((resultMessage) => mapMessage(resultMessage))));
     }

@@ -38,6 +38,8 @@ export const CRED_SENT = "credSent"
 const ID_SEPARATOR = "_"
 
 const allChatsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CHAT)+'*')
+//const allCredsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CREDENTIAL)+'*')
+const allCredReqsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CRED_REQUEST)+'*')
 const allMsgsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_MESSAGE)+'*')
 const allUsersRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_USER)+'*')
 
@@ -59,7 +61,9 @@ export async function loadAll(walName: string,walPass: string) {
         const chats = await loadDecorators(allChatsRegex)
         const users = await loadDecorators(allUsersRegex);
         const messages = await loadDecorators(allMsgsRegex);
-        if(wallet && chats && users && messages) {
+        const credRequests = await loadDecorators(allCredReqsRegex);
+        //const creds = await loadDecorators(allCredsRegex);
+        if(wallet && chats && users && messages && credRequests) {
             return wallet
         } else {
             logger("Failed to load all decorators")
@@ -72,6 +76,7 @@ export async function loadAll(walName: string,walPass: string) {
 }
 
 //----------------- User -----------------
+//TODO unify aliases and storageKeys?
 async function createUserDecorator(alias: string, name: string, pic: string) {
     try {
         if(getUserDecorator(alias)) {
@@ -180,7 +185,7 @@ export function getRootsWallet(walName) {
             return currentWal;
         }
     } else {
-        logger("roots - getRootsWallet has wallet w/keys",Object.keys(currentWal));
+        logger("roots - getRootsWallet has wallet",currentWal);
         return currentWal;
     }
 }
@@ -221,10 +226,10 @@ function getDid(didAlias) {
     logger("roots - getDid by alias",didAlias)
     const dids = currentWal[walletSchema.WALLET_DIDS];
     if(dids) {
-        logger("roots - current dids w/keys",Object.keys(dids))
+        logger("roots - current dids",dids)
         const findDid = dids.find(did => (did[walletSchema.DID_ALIAS] === didAlias));
         if(findDid) {
-            logger("roots -  found did alias",didAlias,"w/keys:",Object.keys(findDid))
+            logger("roots -  found did alias",didAlias,"w/keys:",findDid)
             return findDid
         } else {
             logger("roots - Couldn't find DID",didAlias)
@@ -241,15 +246,15 @@ function getDid(didAlias) {
 export async function createChat (chatAlias, titlePrefix) {
     logger("roots - Creating chat",chatAlias,"w/ titlePrefix",titlePrefix)
     const chatDidCreated = await createDid(chatAlias)
-    logger("roots - chat did created/existed?",chatDidCreated)
+    logger("roots - chat DID created/existed?",chatDidCreated)
     const chatDid = getDid(chatAlias)
-    logger("roots - chat did w/keys",Object.keys(chatDid))
+    logger("roots - chat DID",chatDid)
     //should be the same as chat alias, eating our own dog food
     const chatDidAlias = chatDid[walletSchema.DID_ALIAS]
     const chatDecorCreated = await createChatDecorator(chatDidAlias, titlePrefix)
     logger("roots - chat decorator created/existed?",chatDecorCreated)
     const chatDecor = getChatDecorator(chatDidAlias)
-    logger("roots - chat decorator w/keys",Object.keys(chatDecor))
+    logger("roots - chat decorator",chatDecor)
     //TODO what should the user defaults be?
     const chatUserCreated = await createUserDecorator(chatDidAlias,"You",personLogo)
     logger("roots - chat user created/existed?",chatUserCreated)
@@ -269,6 +274,7 @@ export async function createChat (chatAlias, titlePrefix) {
     }
 }
 
+//TODO unify aliases and storageKeys?
 async function createChatDecorator(chatAlias: string, titlePrefix: string) {
     logger('roots - Creating a new chat decorator',chatAlias)
     if(getChatDecorator(chatAlias)) {
@@ -307,7 +313,7 @@ export function getChatDecorator(chatAlias: string) {
     logger("roots - got chat",chatJson)
     if(chatJson) {
         const chat = JSON.parse(chatJson)
-        logger("roots - chat has keys",Object.keys(chat));
+        logger("roots - parsed chat json w/keys",Object.keys(chat));
         return chat;
     } else {
        logger("roots - could not get chat decorator",chatAlias)
@@ -352,22 +358,48 @@ async function loadChats() {
     }
 }
 
-export async function publishChat(chat) {
+export async function publishChat(chat: Object) {
     if(!chat["published"]) {
         logger("roots - Publishing DID",chat.id,"to Prism")
         isProcessing(true)
         const newWalJson = await PrismModule.publishDid(store.getWallet(currentWal._id), chat.id)
         const result = await updateWallet(currentWal._id,currentWal.passphrase,newWalJson)
         if(result) {
+            logger("roots - published DID for chat, saving chat...",chat.id)
             chat["published"]=true
             chat["title"]=chat.title+"🔗"
-            store.updateDecorator(chat.id,JSON.stringify(chat));
+            const savedChat = await updateChat(chat);
+            if(savedChat) {
+                logger("Chat for published DID saved",chat.id)
+                isProcessing(false)
+                return chat
+            } else {
+                //TODO since wallet is updated, should try to save chat again and again until successful
+                logger("Could not save chat for published DID",chat.id)
+                isProcessing(false)
+                return;
+            }
+        } else {
+            logger("roots - During publish, could not update wallet")
+            isProcessing(false)
+            return;
         }
-        isProcessing(false)
     } else {
         logger("roots - ",chat.id,"is already",PUBLISHED_TO_PRISM)
+        return;
     }
-    return chat
+}
+
+async function updateChat(chat: Object) {
+    const chatStoreId = getStorageKey(chat.id,decorators.DECORATOR_TYPE_CHAT);
+    const updated = await store.updateDecorator(chatStoreId,JSON.stringify(chat));
+    if(updated) {
+        logger("Updated chat storage",chatStoreId);
+        return true;
+    }else {
+        logger("Unable to update chat storage",chatStoreId);
+        return false;
+    }
 }
 
 // ---------------- Messages  ----------------------
@@ -402,7 +434,7 @@ function createMessageId(chatAlias: string,userId: string,msgNum: number) {
 export function getMessages(chatAlias: string, startFromMsgId?: string) {
     const chMsgs = getMessageDecorators(chatAlias)
     logger("roots - Getting chat",chatAlias,chMsgs.length,"messages")
-    chMsgs.forEach(msg => logger("roots - got message w/keys",Object.keys(msg)))
+    chMsgs.forEach(msg => logger("roots - got message",msg))
     if(!startFromMsgId) {
         return chMsgs;
     } else {
@@ -462,6 +494,7 @@ export async function sendMessages(chat,msgs,msgType,userDisplay) {
     msgs.map(async (msg) => await sendMessage(chat,msg.text,msgType,userDisplay))
 }
 
+//TODO unify aliases and storageKeys?
 export async function sendMessage(chat,msgText,msgType,userDisplay,system=false) {
     const msgTime = Date.now()
     logger("roots - user",userDisplay.id,"sending",msgText,"to chat",chat.id);
@@ -533,44 +566,52 @@ async function processCredentialResponse(chat: Object, reply: Object) {
 }
 
 async function processPublishResponse(chat: Object, reply: Reply) {
-    logger("roots - Quick reply publsih")
+    logger("roots - Quick reply, started publsih chat",chat.id)
     const pubChat = await publishChat(chat);
-    const linkMsg = await sendMessage(pubChat,pubChat.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-            TEXT_MSG_TYPE,getUserDecorator(PRISM_BOT))
-    if(linkMsg) {
-        const didMsg = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserDecorator(PRISM_BOT),true);
-        if(demo && didMsg) {
-            const confirmPubMsg = await sendMessage(chat,
-                "You published your chat to Prism!",
-                STATUS_MSG_TYPE,getUserDecorator(ROOTS_BOT))
-            if(confirmPubMsg && demo) {
-                await sendMessage(chat,
-                    "To celebrate your publishing achievement, can we send you a verifiable credential?",
-                    PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+    if(pubChat) {
+        const linkMsg = await sendMessage(pubChat,pubChat.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
+                TEXT_MSG_TYPE,getUserDecorator(PRISM_BOT))
+        if(linkMsg) {
+            const didMsg = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserDecorator(PRISM_BOT),true);
+            if(demo && didMsg) {
+                const confirmPubMsg = await sendMessage(chat,
+                    "You published your chat to Prism!",
+                    STATUS_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+                if(confirmPubMsg && demo) {
+                    await sendMessage(chat,
+                        "To celebrate your publishing achievement, can we send you a verifiable credential?",
+                        PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+                }
             }
         }
+        return pubChat
+    } else {
+        logger("roots - Could not process quick reply to publish chat",chat.id)
+        return;
     }
 }
 
 export async function processQuickReply(chat: Object,replies: Object[]) {
-    logger("roots - Processing Quick Reply w/ chat",chat.id,"w/ reply",replies)
+    logger("roots - Processing Quick Reply w/ chat",chat.id,"w/ replies",replies.length)
     if(replies && chat) {
         replies.forEach(async (reply) =>
         {
             logger("roots - processing quick reply",chat.id,reply)
             if(reply.value === PROMPT_PUBLISH_MSG_TYPE) {
                 logger("roots - process quick reply to publish DID")
-                await processPublishResponse(chat,reply)
+                return await processPublishResponse(chat,reply)
             } else if(reply.value.startsWith(PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE)) {
                 logger("roots - process quick reply for credential")
-                await processCredentialResponse(chat,reply)
+                return await processCredentialResponse(chat,reply)
             }
              else {
                 logger("roots - reply value not recognized, was",chat.id,reply.value)
+                return;
             }
         });
     } else {
         logger("roots - reply",replies,"or chat",chat,"were undefined")
+        return;
     }
 }
 
@@ -588,10 +629,11 @@ async function createCredential(chat: Object,credAlias: string,cred: Object) {
     const credJson = JSON.stringify(cred)
     logger("roots - issuing credential", credJson)
     isProcessing(true)
-    const newWalJson = await PrismModule.issueCred(store.getWallet(currentWal._id), credAlias, credJson);
+    const newWalJson = await PrismModule.issueCred(store.getWallet(currentWal._id), chat.id, credJson);
     if(newWalJson) {
         const savedWal = await updateWallet(currentWal._id,currentWal.passphrase,newWalJson)
         if(savedWal) {
+            const saveCred = await saveCred(cred.alias)
             const credIssuedMsg = await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
                   STATUS_MSG_TYPE,
                   getUserDecorator(ROOTS_BOT))
@@ -730,7 +772,7 @@ export async function createDemoCredential(chat: Object,reply: Object) {
         }
         return await createCredential(chat, credAlias, cred)
     } else {
-        logger("Couldn't create demo credential, is the chat published",chat["published"],"was the credential already found",getCredential(credAlias))
+        logger("roots - Couldn't create demo credential, is the chat published",chat["published"],"was the credential already found",getCredential(credAlias))
         return false;
     }
 //        sendMessage(chat,"Valid credential",

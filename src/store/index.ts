@@ -159,8 +159,13 @@ export function getDecorators(regex: RegExp) {
 export async function restoreByRegex(regex: RegExp) {
     logger("store - restoring keys by regex",regex)
     const keys = await AsyncStore.getStoredKeys(regex)
-    logger("store - restored keys by regex",regex,":\n",keys)
-    return restoreDecorators(keys)
+    if(keys) {
+        logger("store - restored keys by regex",regex,":\n",keys)
+        return await restoreDecorators(keys)
+    }else {
+        logger("store - no keys restored by regex",regex,":\n",keys)
+        return;
+    }
 }
 
 export async function restoreDecorators(aliases: string[]) {
@@ -203,26 +208,22 @@ export async function saveDecorator(alias: string, decorJson: string) {
 }
 
 async function storeDecorator(alias: string, decorJson: string) {
-    const errMsgs = [];
-    errMsgs.push("store - can't store decorator "+alias);
-    errMsgs.push("decorator "+decorJson);
     if(decorJson) {
         try {
             if(await AsyncStore.storeDecorator(alias, decorJson)) {
                 CachedStore.storeDecorator(alias, decorJson)
-                logger('store - cache stored decorator',decorJson)
+                logger('store - stored decorator',alias,decorJson)
                 return true
             } else {
-                logger('store - could not store in async store')
+                console.error('store - could not store in async store',alias,decorJson)
                 return false
             }
         } catch(error) {
-            errMsgs.push(error.message)
-            logger(...errMsgs)
+            console.error("Error storing decorator",alias,decorJson,error,error.stack)
             return false;
         }
     } else {
-        logger(...errMsgs)
+        console.error("store - could not store decorator json",alias,decorJson)
         return false;
     }
 }
