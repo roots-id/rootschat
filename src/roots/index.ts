@@ -361,6 +361,7 @@ export async function publishChat(chat) {
         if(result) {
             chat["published"]=true
             chat["title"]=chat.title+"🔗"
+            store.updateDecorator(chat.id,JSON.stringify(chat));
         }
         isProcessing(false)
     } else {
@@ -507,28 +508,25 @@ function addQuickReply(msg) {
     return msg
 }
 
-async function processCredentialResponse(chat: Object, reply: string) {
+async function processCredentialResponse(chat: Object, reply: Object) {
     logger("roots - Quick reply credential",chat.id,reply)
     const credReqAlias = getCredRequestAlias(reply.messageId)
-    const status = store.getDecorator(credReqAlias)
+    const replyJson = JSON.stringify(reply)
+    //TODO should we allow updates to previous credRequest response?
+    const status = await store.updateDecorator(credReqAlias,replyJson)
     if(!status) {
-        console.error("roots - Could not find your credential request for",credReqAlias)
+        console.error("roots - Could not save credential request for",credReqAlias)
+        return false;
     } else {
-        const savedReply = await store.saveDecorator(credReqAlias,reply)
-        if(savedReply) {
-            if(value.endsWith(CRED_ACCEPTED)) {
-                logger("roots - quick reply credential accepted",credReqAlias)
-                const accepted = await acceptCredential(chat, credReqAlias, reply)
-                return accepted;
-            } else if (value.endsWith(CRED_REJECTED)) {
-                logger("roots - quick reply credential rejected",credReqAlias)
-                return true
-            } else {
-                logger("roots - unknown credential prompt reply",credReqAlias,reply)
-                return false
-            }
+        if(reply.value.endsWith(CRED_ACCEPTED)) {
+            logger("roots - quick reply credential accepted",credReqAlias)
+            const accepted = await acceptCredential(chat, reply)
+            return accepted;
+        } else if (reply.value.endsWith(CRED_REJECTED)) {
+            logger("roots - quick reply credential rejected",credReqAlias)
+            return true
         } else {
-            logger("roots - could not save quick reply", credAlias,reply)
+            logger("roots - unknown credential prompt reply",credReqAlias,replyJson)
             return false
         }
     }
@@ -554,7 +552,7 @@ async function processPublishResponse(chat: Object, reply: Reply) {
     }
 }
 
-export async function processQuickReply(chat,replies) {
+export async function processQuickReply(chat: Object,replies: Object[]) {
     logger("roots - Processing Quick Reply w/ chat",chat.id,"w/ reply",replies)
     if(replies && chat) {
         replies.forEach(async (reply) =>
@@ -578,9 +576,9 @@ export async function processQuickReply(chat,replies) {
 
 // ------------------ Credentials ----------
 
-async function acceptCredential(credReqAlias) {
+async function acceptCredential(chat: Object, reply: Object) {
     if(demo) {
-        await createDemoCredential(chat)
+        await createDemoCredential(chat, reply)
     } else {
         //TODO accept non-demo credentials
     }
@@ -702,11 +700,12 @@ export function isProcessing(processing=false) {
 
 //----------- DEMO Stuff --------------------
 
-export async function createDemoCredential(chat,reply) {
-    logger("Creating demo credential for chat",chat.id,reply)
+export async function createDemoCredential(chat: Object,reply: Object) {
+    logger("roots - Trying to create demo credential for chat",chat.id,reply)
     const credMsgs = []
     const credAlias = getCredentialAlias(reply.messageId)
     if(chat["published"] && !getCredential(credAlias)) {
+        logger("roots - Chat is published and credential not found, creating....")
         const didLong = getDid(chat.id)[walletSchema.DID_URI_LONG_FORM]
         logger("roots - Creating demo credential for chat",chat.id,"w/long form did",didLong)
         const cred = {
@@ -730,6 +729,9 @@ export async function createDemoCredential(chat,reply) {
             revoked: false,
         }
         return await createCredential(chat, credAlias, cred)
+    } else {
+        logger("Couldn't create demo credential, is the chat published",chat["published"],"was the credential already found",getCredential(credAlias))
+        return false;
     }
 //        sendMessage(chat,"Valid credential",
 //                      STATUS_MSG_TYPE,
@@ -751,7 +753,6 @@ export async function createDemoCredential(chat,reply) {
 //        sendMessage(chat,"Invalid credential.",
 //                    STATUS_MSG_TYPE,
 //                    getUserDisplay(ROOTS_BOT))
-    return false;
 }
 
 async function initDemo() {
