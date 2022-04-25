@@ -1,26 +1,26 @@
 import { logger, warn } from '../logging'
 
-let cachedDecorators: {[alias: string]: string } = {};
+let cachedItems: {[alias: string]: string } = {};
 let cachedWallets: { [walName: string]: string } = {};
 
-export function getDecorator(alias: string) {
-    const decoratorJson = cachedDecorators[alias]
-    logger("CachedStore - get",alias,"in cache is",decoratorJson)
-    return decoratorJson;
+export function getItem(alias: string) {
+    const itemJson = cachedItems[alias]
+    logger("CachedStore - get",alias,"in cache is",itemJson)
+    return itemJson;
 }
 
-export function getDecorators(regex: RegExp) {
-    const keys = Object.keys(cachedDecorators).filter((key) => regex.test(key))
-    logger("CachedStore - getting decorators",keys,"w/regex",regex)
-    let decorators = []
+export function getItems(regex: RegExp) {
+    const keys = Object.keys(cachedItems).filter((key) => regex.test(key))
+    logger("CachedStore - getting items",keys,"w/regex",regex)
+    let items = []
     if(!keys || keys == null || keys.length <= 0) {
-        logger("CachedStore - No decorators found w/regex",regex);
-        return decorators;
+        logger("CachedStore - No items found w/regex",regex);
+        return items;
     } else {
-        logger("CachedStore - retrieving # of decorators",keys.length,"w/regex",regex);
-        decorators = keys.map(key => getDecorator(key))
-        logger("CachedStore - retrieved # of decorators",decorators.length,"w/regex",regex);
-        return decorators;
+        logger("CachedStore - retrieving # of items",keys.length,"w/regex",regex);
+        items = keys.map(key => getItem(key))
+        logger("CachedStore - retrieved # of items",items.length,"w/regex",regex);
+        return items;
     }
 }
 
@@ -30,14 +30,14 @@ export function getWallet(walName: string) {
     return walJson;
 }
 
-export function hasDecorator(alias: string) {
-    const decoratorJson = getDecorator(alias)
-    const noDecorator = (!decoratorJson || decoratorJson == null);
-    if(noDecorator) {
-        logger("CachedStore - does not have decorator",alias)
+export function hasItem(alias: string) {
+    const item = getItem(alias)
+    const noItem = (!item || item == null);
+    if(noItem) {
+        logger("CachedStore - does not have item",alias)
         return false
     } else {
-        logger("CachedStore - has decorator",alias,decoratorJson)
+        logger("CachedStore - has item",alias,item)
         return true
     }
 }
@@ -55,20 +55,20 @@ export function hasWallet(walName: string) {
 
 export async function status() {
     logger("CachedStore - wallets:",Object.keys(cachedWallets))
-    logger("CachedStore - decorators:",Object.keys(cachedDecorators))
+    logger("CachedStore - items:",Object.keys(cachedItems))
 }
 
-export function storeDecorator(alias: string, decoratorJson: string) {
+export function storeItem(alias: string, item: string) {
     try {
-        logger("CachedStore - storing decorator",alias,":",decoratorJson)
-        const oldDecorator = cachedDecorators[alias]
-        cachedDecorators[alias] = decoratorJson
-        if(oldDecorator && oldDecorator !== null) {
-            logger("CachedStore - Replace previous decoratorJson",alias,oldDecorator)
+        logger("CachedStore - storing item",alias,":",item)
+        const oldItem = cachedItems[alias]
+        cachedItems[alias] = item
+        if(oldItem && oldItem !== null) {
+            logger("CachedStore - Replace previous item",alias,oldItem)
         }
         return true;
     } catch(error) {
-        console.error("CachedStore - Could not store decorator",alias,error)
+        console.error("CachedStore - Could not store item",alias,error)
         return false;
     }
     return false;

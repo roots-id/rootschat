@@ -1,10 +1,10 @@
 import { logger } from '../logging';
 
-export const DECORATOR_TYPE_CHAT = "rootsChatType"
-export const DECORATOR_TYPE_MESSAGE = "rootsMsgType"
-export const DECORATOR_TYPE_CREDENTIAL = "rootsCredentialType"
-export const DECORATOR_TYPE_CRED_REQUEST = "rootsCredRequestType"
-export const DECORATOR_TYPE_USER = "rootsUserType"
+export const MODEL_TYPE_CHAT = "rootsChatType"
+export const MODEL_TYPE_MESSAGE = "rootsMsgType"
+export const MODEL_TYPE_CREDENTIAL = "rootsCredentialType"
+export const MODEL_TYPE_CRED_REQUEST = "rootsCredRequestType"
+export const MODEL_TYPE_USER = "rootsUserType"
 
 export function createChat(chatAlias: string, titlePrefix?: string) {
     const chat = {
@@ -12,7 +12,7 @@ export function createChat(chatAlias: string, titlePrefix?: string) {
          published: false,
          title: titlePrefix+chatAlias,
     }
-    logger("decorators - created chat decorator w/keys",Object.keys(chat))
+    logger("models - created chat model w/keys",Object.keys(chat))
     return chat;
 }
 
@@ -25,7 +25,7 @@ export function createMessage(idText: string,bodyText: string,statusText: string
         user: userId,
         system: system,
     }
-    logger("decorators - created msg decorator w/keys",Object.keys(msg))
+    logger("models - created msg model w/keys",Object.keys(msg))
     return msg;
 }
 
@@ -35,6 +35,6 @@ export function createUser(userAlias: string, userName: string, userPicUrl: stri
         displayName: userName,
         displayPictureUrl: userPicUrl,
     }
-    logger("decorators - create user decorator w/keys",Object.keys(user))
+    logger("models - create user model w/keys",Object.keys(user))
     return user;
 }

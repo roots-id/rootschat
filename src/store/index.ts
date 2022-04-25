@@ -116,43 +116,43 @@ async function storeWallet(walName: string, walPass: string, walJson: string) {
     }
 }
 
-export async function hasDecorator(alias: string) {
-    if(!CachedStore.hasDecorator(alias)) {
-        const persisted = await AsyncStore.hasDecorator(alias)
+export async function hasItem(alias: string) {
+    if(!CachedStore.hasItem(alias)) {
+        const persisted = await AsyncStore.hasItem(alias)
         if(persisted) {
-            logger("store - has decorator",alias);
+            logger("store - has item",alias);
             return true;
         } else {
-            logger("store - does not have decorator",alias);
+            logger("store - does not have item",alias);
             return false;
         }
     }
     else{
-        logger("store - has decorator in cache",getDecorator(alias));
+        logger("store - has item in cache",getItem(alias));
         return true;
     }
 }
 
-export function getDecorator(alias: string) {
-    const decorJson = CachedStore.getDecorator(alias);
-    if (!decorJson || decorJson == null) {
-        logger('store - decorator not found in cache',alias)
+export function getItem(alias: string) {
+    const itemJson = CachedStore.getItem(alias);
+    if (!itemJson || itemJson == null) {
+        logger('store - item not found in cache',alias)
         return;
     } else {
-        logger('store - decorator found in cache',alias,decorJson)
-        return decorJson;
+        logger('store - item found in cache',alias,itemJson)
+        return itemJson;
     }
 }
 
-export function getDecorators(regex: RegExp) {
-    const decorators = CachedStore.getDecorators(regex);
-    if (!decorators || decorators == null || decorators.length <= 0) {
-        logger('store - no cached decorators found')
-        return decorators;
+export function getItems(regex: RegExp) {
+    const items = CachedStore.getItems(regex);
+    if (!items || items == null || items.length <= 0) {
+        logger('store - no cached items found')
+        return items;
     } else {
-        logger('store - cached decorators found',decorators.length)
-        decorators.forEach(decorator => logger("decorator",decorator))
-        return decorators;
+        logger('store - cached items found',items.length)
+        items.forEach(item => logger("item",item))
+        return items;
     }
 }
 
@@ -161,14 +161,14 @@ export async function restoreByRegex(regex: RegExp) {
     const keys = await AsyncStore.getStoredKeys(regex)
     if(keys) {
         logger("store - restored keys by regex",regex,":\n",keys)
-        return await restoreDecorators(keys)
+        return await restoreItems(keys)
     }else {
         logger("store - no keys restored by regex",regex,":\n",keys)
         return;
     }
 }
 
-export async function restoreDecorators(aliases: string[]) {
+export async function restoreItems(aliases: string[]) {
     if(!aliases || aliases == null || aliases.length <= 0) {
         logger("store - No aliases to restore",aliases)
         return true;
@@ -176,65 +176,65 @@ export async function restoreDecorators(aliases: string[]) {
         try {
             const allRestored = await aliases.reduce(async (previousStatus,alias) => {
                 logger("store - restoring",alias)
-                const decorJson = await AsyncStore.getDecorator(alias)
-                if(!decorJson || decorJson == null) {
-                    logger("store - No decorator found",alias)
+                const itemJson = await AsyncStore.getItem(alias)
+                if(!itemJson || itemJson == null) {
+                    logger("store - No item found",alias)
                     previousStatus = previousStatus && false;
                     return previousStatus
                 } else {
-                    logger("store - putting restored decorator in cache",alias,":",decorJson)
-                    const result = CachedStore.storeDecorator(alias,decorJson)
+                    logger("store - putting restored item in cache",alias,":",itemJson)
+                    const result = CachedStore.storeItem(alias,itemJson)
                     previousStatus = previousStatus && result;
                     return previousStatus
                 }
             },true);
-            logger("were all decorators restored",allRestored)
+            logger("were all items restored",allRestored)
             return allRestored;
         } catch (error) {
-            logger("store - getting decorators from storage failed",aliases,error)
+            logger("store - getting items from storage failed",aliases,error)
             return false;
         }
     }
 }
 
 
-export async function saveDecorator(alias: string, decorJson: string) {
-    if(await hasDecorator(alias)) {
-        logger("store - decorator already exists.  Not adding",alias)
+export async function saveItem(alias: string, itemJson: string) {
+    if(await hasItem(alias)) {
+        logger("store - item already exists.  Not adding",alias)
         return false
     } else {
-        return updateDecorator(alias,decorJson);
+        return updateItem(alias,itemJson);
     }
 }
 
-async function storeDecorator(alias: string, decorJson: string) {
-    if(decorJson) {
+async function storeItem(alias: string, itemJson: string) {
+    if(itemJson) {
         try {
-            if(await AsyncStore.storeDecorator(alias, decorJson)) {
-                CachedStore.storeDecorator(alias, decorJson)
-                logger('store - stored decorator',alias,decorJson)
+            if(await AsyncStore.storeItem(alias, itemJson)) {
+                CachedStore.storeItem(alias, itemJson)
+                logger('store - stored item',alias,itemJson)
                 return true
             } else {
-                console.error('store - could not store in async store',alias,decorJson)
+                console.error('store - could not store in async store',alias,itemJson)
                 return false
             }
         } catch(error) {
-            console.error("Error storing decorator",alias,decorJson,error,error.stack)
+            console.error("Error storing item",alias,itemJson,error,error.stack)
             return false;
         }
     } else {
-        console.error("store - could not store decorator json",alias,decorJson)
+        console.error("store - could not store item json",alias,itemJson)
         return false;
     }
 }
 
-export async function updateDecorator(alias: string, decorJson: string) {
+export async function updateItem(alias: string, itemJson: string) {
     try {
-        await storeDecorator(alias, decorJson);
-        logger("store - decorator added/updated",alias,"json:",decorJson)
+        await storeItem(alias, itemJson);
+        logger("store - item added/updated",alias,"json:",itemJson)
         return true
     } catch(error) {
-        console.error("Could not update decorator",alias,decorJson)
+        console.error("Could not update item",alias,itemJson)
         return false
     }
 }

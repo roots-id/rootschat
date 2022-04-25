@@ -1,4 +1,4 @@
-import * as decorators from '../decorators'
+import * as models from '../models'
 import { logger } from '../logging'
 import PrismModule from '../prism'
 import { Reply } from 'react-native-gifted-chat';
@@ -37,11 +37,11 @@ export const CRED_SENT = "credSent"
 
 const ID_SEPARATOR = "_"
 
-const allChatsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CHAT)+'*')
-//const allCredsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CREDENTIAL)+'*')
-const allCredReqsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_CRED_REQUEST)+'*')
-const allMsgsRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_MESSAGE)+'*')
-const allUsersRegex = new RegExp('^'+getStorageKey("",decorators.DECORATOR_TYPE_USER)+'*')
+const allChatsRegex = new RegExp('^'+getStorageKey("",models.MODEL_TYPE_CHAT)+'*')
+//const allCredsRegex = new RegExp('^'+getStorageKey("",models.MODEL_TYPE_CREDENTIAL)+'*')
+const allCredReqsRegex = new RegExp('^'+getStorageKey("",models.MODEL_TYPE_CRED_REQUEST)+'*')
+const allMsgsRegex = new RegExp('^'+getStorageKey("",models.MODEL_TYPE_MESSAGE)+'*')
+const allUsersRegex = new RegExp('^'+getStorageKey("",models.MODEL_TYPE_USER)+'*')
 
 const ROOTS_BOT = "RootsWalletBot1"
 const PRISM_BOT = "PrismBot1"
@@ -58,15 +58,15 @@ const allProcessing = [];
 export async function loadAll(walName: string,walPass: string) {
     const wallet = await loadWallet(walName, walPass);
     if(wallet) {
-        const chats = await loadDecorators(allChatsRegex)
-        const users = await loadDecorators(allUsersRegex);
-        const messages = await loadDecorators(allMsgsRegex);
-        const credRequests = await loadDecorators(allCredReqsRegex);
-        //const creds = await loadDecorators(allCredsRegex);
+        const chats = await loadItems(allChatsRegex)
+        const users = await loadItems(allUsersRegex);
+        const messages = await loadItems(allMsgsRegex);
+        const credRequests = await loadItems(allCredReqsRegex);
+        //const creds = await loadItems(allCredsRegex);
         if(wallet && chats && users && messages && credRequests) {
             return wallet
         } else {
-            logger("Failed to load all decorators")
+            logger("Failed to load all items")
             return;
         }
     } else {
@@ -77,17 +77,17 @@ export async function loadAll(walName: string,walPass: string) {
 
 //----------------- User -----------------
 //TODO unify aliases and storageKeys?
-async function createUserDecorator(alias: string, name: string, pic: string) {
+async function createUserItem(alias: string, name: string, pic: string) {
     try {
-        if(getUserDecorator(alias)) {
+        if(getUserItem(alias)) {
             logger("roots - user already exists",alias)
             return true;
         } else {
             logger("roots - user did not exist",alias)
-            const userDecor = decorators.createUser(alias, name, pic)
-            const userDecorJson = JSON.stringify(userDecor)
-            logger("generated user",userDecorJson)
-            const result = await store.saveDecorator(getStorageKey(alias, decorators.DECORATOR_TYPE_USER), userDecorJson)
+            const userItem = models.createUser(alias, name, pic)
+            const userItemJson = JSON.stringify(userItem)
+            logger("generated user",userItemJson)
+            const result = await store.saveItem(getStorageKey(alias, models.MODEL_TYPE_USER), userItemJson)
             logger("roots - created user",alias,"?",result)
             return result;
         }
@@ -97,34 +97,34 @@ async function createUserDecorator(alias: string, name: string, pic: string) {
     }
 }
 
-export function getUserDecorator(userId) {
+export function getUserItem(userId) {
     logger("roots - Getting user",userId)
-    const userDecorJson = store.getDecorator(getStorageKey(userId,decorators.DECORATOR_TYPE_USER));
-    logger("roots - Got user json",userDecorJson)
-    if(userDecorJson) {
-        const userDecor = JSON.parse(userDecorJson)
-        logger("roots - user w/keys",Object.keys(userDecor))
-        return userDecor
+    const userItemJson = store.getItem(getStorageKey(userId,models.MODEL_TYPE_USER));
+    logger("roots - Got user json",userItemJson)
+    if(userItemJson) {
+        const userItem = JSON.parse(userItemJson)
+        logger("roots - user w/keys",Object.keys(userItem))
+        return userItem
     } else {
         logger("roots - user not found",userId)
-        return userDecorJson
+        return userItemJson
     }
 }
 
 async function loadUsers() {
     try {
         const aliases = getAllDidAliases(currentWal);
-        const result = await store.restoreDecorators(getStorageKeys(aliases,decorators.DECORATOR_TYPE_USER));
+        const result = await store.restoreItems(getStorageKeys(aliases,models.MODEL_TYPE_USER));
         if(result) {
-            logger("roots - successfully loaded chat decorators",aliases)
+            logger("roots - successfully loaded chat items",aliases)
             return true;
         }
         else {
-            console.error("roots - Failed to load chat decorators",aliases)
+            console.error("roots - Failed to load chat items",aliases)
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load chat decorators",error,error.stack)
+        console.error("roots - Failed to load chat items",error,error.stack)
         return false;
     }
 }
@@ -251,20 +251,20 @@ export async function createChat (chatAlias, titlePrefix) {
     logger("roots - chat DID",chatDid)
     //should be the same as chat alias, eating our own dog food
     const chatDidAlias = chatDid[walletSchema.DID_ALIAS]
-    const chatDecorCreated = await createChatDecorator(chatDidAlias, titlePrefix)
-    logger("roots - chat decorator created/existed?",chatDecorCreated)
-    const chatDecor = getChatDecorator(chatDidAlias)
-    logger("roots - chat decorator",chatDecor)
+    const chatItemCreated = await createChatItem(chatDidAlias, titlePrefix)
+    logger("roots - chat item created/existed?",chatItemCreated)
+    const chatItem = getChatItem(chatDidAlias)
+    logger("roots - chat item",chatItem)
     //TODO what should the user defaults be?
-    const chatUserCreated = await createUserDecorator(chatDidAlias,"You",personLogo)
+    const chatUserCreated = await createUserItem(chatDidAlias,"You",personLogo)
     logger("roots - chat user created/existed?",chatUserCreated)
-    const chatUser = getUserDecorator(chatDidAlias)
+    const chatUser = getUserItem(chatDidAlias)
 
-    if(chatDidCreated && chatDecorCreated && chatUserCreated) {
-        const sentWelcome = await sendMessage(chatDecor,"Welcome to *"+chatAlias+"*",TEXT_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+    if(chatDidCreated && chatItemCreated && chatUserCreated) {
+        const sentWelcome = await sendMessage(chatItem,"Welcome to *"+chatAlias+"*",TEXT_MSG_TYPE,getUserItem(ROOTS_BOT))
         if(sentWelcome) {
-            await sendMessage(chatDecor,"Would you like to publish this chat to Prism?",
-                PROMPT_PUBLISH_MSG_TYPE,getUserDecorator(PRISM_BOT))
+            await sendMessage(chatItem,"Would you like to publish this chat to Prism?",
+                PROMPT_PUBLISH_MSG_TYPE,getUserItem(PRISM_BOT))
             logger("Created chat and added welcome to chat",chatAlias,"with chatDid",chatDidAlias)
         }
         return true;
@@ -275,14 +275,14 @@ export async function createChat (chatAlias, titlePrefix) {
 }
 
 //TODO unify aliases and storageKeys?
-async function createChatDecorator(chatAlias: string, titlePrefix: string) {
-    logger('roots - Creating a new chat decorator',chatAlias)
-    if(getChatDecorator(chatAlias)) {
-        logger('roots - chat decorator already exists',chatAlias)
+async function createChatItem(chatAlias: string, titlePrefix: string) {
+    logger('roots - Creating a new chat item',chatAlias)
+    if(getChatItem(chatAlias)) {
+        logger('roots - chat item already exists',chatAlias)
         return true
     } else {
-        const chatDecor = decorators.createChat(chatAlias, [], titlePrefix)
-        const savedChat = await store.saveDecorator(getStorageKey(chatAlias, decorators.DECORATOR_TYPE_CHAT), JSON.stringify(chatDecor))
+        const chatItem = models.createChat(chatAlias, [], titlePrefix)
+        const savedChat = await store.saveItem(getStorageKey(chatAlias, models.MODEL_TYPE_CHAT), JSON.stringify(chatItem))
         if(savedChat) {
             logger('roots - new chat saved',chatAlias)
             return true
@@ -295,7 +295,7 @@ async function createChatDecorator(chatAlias: string, titlePrefix: string) {
 
 //TODO iterate to verify DID connections if cache is expired
 export async function getAllChats () {
-    const allChats = getChatDecorators();
+    const allChats = getChatItems();
     if(allChats.length == 0 && demo) {
         logger("roots - adding demo to chats")
         await initDemo()
@@ -307,24 +307,25 @@ export async function getAllChats () {
     return result;
 }
 
-export function getChatDecorator(chatAlias: string) {
-    logger("roots - getting chat decorator",chatAlias)
-    const chatJson = store.getDecorator(getStorageKey(chatAlias,decorators.DECORATOR_TYPE_CHAT))
+export function getChatItem(chatAlias: string) {
+    logger("roots - getting chat item",chatAlias)
+    const chatJson = store.getItem(getStorageKey(chatAlias,models.MODEL_TYPE_CHAT))
     logger("roots - got chat",chatJson)
     if(chatJson) {
         const chat = JSON.parse(chatJson)
         logger("roots - parsed chat json w/keys",Object.keys(chat));
         return chat;
     } else {
-       logger("roots - could not get chat decorator",chatAlias)
+       logger("roots - could not get chat item",chatAlias)
     }
 }
 
-function getChatDecorators() {
-    logger("roots - getting chat decorators")
-    const chatDecorJsonArray = store.getDecorators(allChatsRegex)
-    logger("roots - got chat decorators",String(chatDecorJsonArray))
-    const chats = chatDecorJsonArray.map(chatDecorJson => JSON.parse(chatDecorJson))
+//TODO make order of chats deterministic (likely should be most recent first)
+function getChatItems() {
+    logger("roots - getting chat items")
+    const chatItemJsonArray = store.getItems(allChatsRegex)
+    logger("roots - got chat items",String(chatItemJsonArray))
+    const chats = chatItemJsonArray.map(chatItemJson => JSON.parse(chatItemJson))
     return chats;
 }
 
@@ -343,46 +344,52 @@ function getAllDidAliases(wallet) {
 async function loadChats() {
     try {
         const aliases = getAllDidAliases(currentWal);
-        const result = await store.restoreDecorators(getStorageKeys(aliases,decorators.DECORATOR_TYPE_CHAT));
+        const result = await store.restoreItems(getStorageKeys(aliases,models.MODEL_TYPE_CHAT));
         if(result) {
-            logger("roots - successfully loaded chat decorators",aliases)
+            logger("roots - successfully loaded chat items",aliases)
             return true;
         }
         else {
-            console.error("roots - Failed to load chat decorators",aliases)
+            console.error("roots - Failed to load chat items",aliases)
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load chat decorators",error,error.stack)
+        console.error("roots - Failed to load chat items",error,error.stack)
         return false;
     }
 }
 
+//TODO improve error handling
 export async function publishChat(chat: Object) {
     if(!chat["published"]) {
         logger("roots - Publishing DID",chat.id,"to Prism")
         isProcessing(true)
-        const newWalJson = await PrismModule.publishDid(store.getWallet(currentWal._id), chat.id)
-        const result = await updateWallet(currentWal._id,currentWal.passphrase,newWalJson)
-        if(result) {
-            logger("roots - published DID for chat, saving chat...",chat.id)
-            chat["published"]=true
-            chat["title"]=chat.title+"🔗"
-            const savedChat = await updateChat(chat);
-            if(savedChat) {
-                logger("Chat for published DID saved",chat.id)
-                isProcessing(false)
-                return chat
+        try {
+            const newWalJson = await PrismModule.publishDid(store.getWallet(currentWal._id), chat.id)
+            const result = await updateWallet(currentWal._id,currentWal.passphrase,newWalJson)
+            if(result) {
+                logger("roots - published DID for chat, saving chat...",chat.id)
+                chat["published"]=true
+                chat["title"]=chat.title+"🔗"
+                const savedChat = await updateChat(chat);
+                if(savedChat) {
+                    logger("Chat for published DID saved",chat.id)
+                    isProcessing(false)
+                    return chat
+                } else {
+                    //TODO since wallet is updated, should try to save chat again and again until successful
+                    logger("Could not save chat for published DID",chat.id)
+                    isProcessing(false)
+                    return;
+                }
             } else {
-                //TODO since wallet is updated, should try to save chat again and again until successful
-                logger("Could not save chat for published DID",chat.id)
+                logger("roots - During publish, could not update wallet")
                 isProcessing(false)
                 return;
             }
-        } else {
-            logger("roots - During publish, could not update wallet")
+        } catch(error) {
+            logger("roots - Error publishing chat/DID",chat.id,error,error.stack)
             isProcessing(false)
-            return;
         }
     } else {
         logger("roots - ",chat.id,"is already",PUBLISHED_TO_PRISM)
@@ -391,8 +398,8 @@ export async function publishChat(chat: Object) {
 }
 
 async function updateChat(chat: Object) {
-    const chatStoreId = getStorageKey(chat.id,decorators.DECORATOR_TYPE_CHAT);
-    const updated = await store.updateDecorator(chatStoreId,JSON.stringify(chat));
+    const chatStoreId = getStorageKey(chat.id,models.MODEL_TYPE_CHAT);
+    const updated = await store.updateItem(chatStoreId,JSON.stringify(chat));
     if(updated) {
         logger("Updated chat storage",chatStoreId);
         return true;
@@ -407,15 +414,15 @@ async function updateChat(chat: Object) {
 // export async function addMessage(chatAlias: string, message) {
 //     const msgJson = JSON.stringify(message)
 //     logger("roots - Adding msg to chat",chatAlias,"msg:",msgJson)
-// //     const chatJson = store.getDecorator(message.id,decorators.DECORATOR_TYPE_MESSAGE)
+// //     const chatJson = store.getItem(message.id,models.MODEL_TYPE_MESSAGE)
 // //     const chat = JSON.parse(chatJson)
 // //     //TODO expensive to search messages that are just JSON strings
-// //     const foundJson = chat[decorators.CHAT_MESSAGES].find(msg => (JSON.parse(msg).id == message.id));
+// //     const foundJson = chat[models.CHAT_MESSAGES].find(msg => (JSON.parse(msg).id == message.id));
 // //     if(foundJson) {
 // //         console.error("Can't add message with the same id\n\tfound:",foundJson,"\n\twanted to add",msgJson)
 // //         return false;
 //     try {
-//         chat[decorators.CHAT_MESSAGES].push(msgJson)
+//         chat[models.CHAT_MESSAGES].push(msgJson)
 //         return await
 //     }
 // }
@@ -426,13 +433,13 @@ function addMessageExtensions(msg) {
 }
 
 function createMessageId(chatAlias: string,userId: string,msgNum: number) {
-    let msgId = getStorageKey(chatAlias,decorators.DECORATOR_TYPE_MESSAGE)+ID_SEPARATOR+userId+ID_SEPARATOR+String(msgNum);
+    let msgId = getStorageKey(chatAlias,models.MODEL_TYPE_MESSAGE)+ID_SEPARATOR+userId+ID_SEPARATOR+String(msgNum);
     logger("roots - Generated msg id",msgId);
     return msgId;
 }
 
 export function getMessages(chatAlias: string, startFromMsgId?: string) {
-    const chMsgs = getMessageDecorators(chatAlias)
+    const chMsgs = getMessageItems(chatAlias)
     logger("roots - Getting chat",chatAlias,chMsgs.length,"messages")
     chMsgs.forEach(msg => logger("roots - got message",msg))
     if(!startFromMsgId) {
@@ -458,34 +465,34 @@ export function getMessages(chatAlias: string, startFromMsgId?: string) {
     }
 }
 
-export function getMessageDecorators(chatAlias: string) {
-    logger("roots - getting message decorators for chat",chatAlias)
-    const msgRegex = new RegExp('^'+getStorageKey(chatAlias,decorators.DECORATOR_TYPE_MESSAGE)+'*')
-    const msgDecorJsonArray = store.getDecorators(msgRegex)
-    logger("roots - got msg decorators",msgDecorJsonArray.length)
-    const chatMsgs = msgDecorJsonArray.map(
-        (msgDecorJson) => {
-            logger("parsing msg json",msgDecorJson)
-            return JSON.parse(msgDecorJson);
+export function getMessageItems(chatAlias: string) {
+    logger("roots - getting message items for chat",chatAlias)
+    const msgRegex = new RegExp('^'+getStorageKey(chatAlias,models.MODEL_TYPE_MESSAGE)+'*')
+    const msgItemJsonArray = store.getItems(msgRegex)
+    logger("roots - got msg items",msgItemJsonArray.length)
+    const chatMsgs = msgItemJsonArray.map(
+        (msgItemJson) => {
+            logger("parsing msg json",msgItemJson)
+            return JSON.parse(msgItemJson);
         }
     )
     chatMsgs.sort((a,b) => (a.createdTime < b.createdTime))
     return chatMsgs;
 }
 
-async function loadDecorators(regex: RegExp) {
+async function loadItems(regex: RegExp) {
     try {
         const result = await store.restoreByRegex(regex)
         if(result) {
-            logger("roots - successfully loaded decorators w/regex",regex)
+            logger("roots - successfully loaded items w/regex",regex)
             return true;
         }
         else {
-            console.error("roots - Failed to load decorators w/regex",regex)
+            console.error("roots - Failed to load items w/regex",regex)
             return false;
         }
     } catch(error) {
-        console.error("roots - Failed to load decorators w/regex",regex,error,error.stack)
+        console.error("roots - Failed to load items w/regex",regex,error,error.stack)
         return false;
     }
 }
@@ -499,10 +506,10 @@ export async function sendMessage(chat,msgText,msgType,userDisplay,system=false)
     const msgTime = Date.now()
     logger("roots - user",userDisplay.id,"sending",msgText,"to chat",chat.id);
     const msgId = createMessageId(chat.id,userDisplay.id,msgTime);
-    let msg = decorators.createMessage(msgId, msgText, msgType, msgTime, userDisplay.id, system);
+    let msg = models.createMessage(msgId, msgText, msgType, msgTime, userDisplay.id, system);
     msg = addMessageExtensions(msg);
     try {
-        const result = await store.saveDecorator(msg.id,JSON.stringify(msg))
+        const result = await store.saveItem(msg.id,JSON.stringify(msg))
         if(handlers["onReceivedMessage"]) {
             handlers["onReceivedMessage"](msg)
         }
@@ -546,7 +553,7 @@ async function processCredentialResponse(chat: Object, reply: Object) {
     const credReqAlias = getCredRequestAlias(reply.messageId)
     const replyJson = JSON.stringify(reply)
     //TODO should we allow updates to previous credRequest response?
-    const status = await store.updateDecorator(credReqAlias,replyJson)
+    const status = await store.updateItem(credReqAlias,replyJson)
     if(!status) {
         console.error("roots - Could not save credential request for",credReqAlias)
         return false;
@@ -570,17 +577,17 @@ async function processPublishResponse(chat: Object, reply: Reply) {
     const pubChat = await publishChat(chat);
     if(pubChat) {
         const linkMsg = await sendMessage(pubChat,pubChat.id+" "+PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
-                TEXT_MSG_TYPE,getUserDecorator(PRISM_BOT))
+                TEXT_MSG_TYPE,getUserItem(PRISM_BOT))
         if(linkMsg) {
-            const didMsg = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserDecorator(PRISM_BOT),true);
+            const didMsg = await sendMessage(chat,JSON.stringify(getDid(chat.id)),DID_JSON_MSG_TYPE,getUserItem(PRISM_BOT),true);
             if(demo && didMsg) {
                 const confirmPubMsg = await sendMessage(chat,
                     "You published your chat to Prism!",
-                    STATUS_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+                    STATUS_MSG_TYPE,getUserItem(ROOTS_BOT))
                 if(confirmPubMsg && demo) {
                     await sendMessage(chat,
                         "To celebrate your publishing achievement, can we send you a verifiable credential?",
-                        PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserDecorator(ROOTS_BOT))
+                        PROMPT_ACCEPT_CREDENTIAL_MSG_TYPE,getUserItem(ROOTS_BOT))
                 }
             }
         }
@@ -633,15 +640,15 @@ async function createCredential(chat: Object,credAlias: string,cred: Object) {
     if(newWalJson) {
         const savedWal = await updateWallet(currentWal._id,currentWal.passphrase,newWalJson)
         if(savedWal) {
-            const saveCred = await saveCred(cred.alias)
+            //const saveCred = await saveCred(cred.alias)
             const credIssuedMsg = await sendMessage(chat,"Your new credential has been " + PUBLISHED_TO_PRISM+"\nhttps://explorer.cardano-testnet.iohkdev.io/en/transaction?id=0ce00bc602ef54dfc52b4106bebcafb72c2447bdf666cd609d50fd3a7e9d2474",
                   STATUS_MSG_TYPE,
-                  getUserDecorator(ROOTS_BOT))
+                  getUserItem(ROOTS_BOT))
             //const code = await QRCode.toDataURL()
             if(credIssuedMsg) {
                 const credJsonMsg = await sendMessage(chat,JSON.stringify(getCredential(cred.alias)),
                     CREDENTIAL_JSON_MSG_TYPE,
-                    getUserDecorator(PRISM_BOT),true)
+                    getUserItem(PRISM_BOT),true)
                 isProcessing(false)
                 return true
             } else {
@@ -685,11 +692,11 @@ function getCredential(credAlias) {
 }
 
 function getCredentialAlias(msgId) {
-    return getStorageKey(msgId,decorators.DECORATOR_TYPE_CREDENTIAL)
+    return getStorageKey(msgId,models.MODEL_TYPE_CREDENTIAL)
 }
 
 function getCredRequestAlias(msgId) {
-    return getStorageKey(msgId,decorators.DECORATOR_TYPE_CRED_REQUEST)
+    return getStorageKey(msgId,models.MODEL_TYPE_CRED_REQUEST)
 }
 //---------------- Keys -----------------------
 
@@ -812,16 +819,16 @@ async function initDemoAchievements() {
 
     await sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Opened RootsWallet!",
       STATUS_MSG_TYPE,
-      getUserDecorator(ROOTS_BOT))
+      getUserItem(ROOTS_BOT))
     await sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Opened RootsWallet}",
       CREDENTIAL_JSON_MSG_TYPE,
-      getUserDecorator(ROOTS_BOT))
+      getUserItem(ROOTS_BOT))
     await sendMessage(achieveCh,ACHIEVEMENT_MSG_PREFIX+"Clicked Example!",
       STATUS_MSG_TYPE,
-      getUserDecorator(ROOTS_BOT))
+      getUserItem(ROOTS_BOT))
     await sendMessage(achieveCh,"{subject: you,issuer: RootsWallet,credential: Clicked Example}",
       CREDENTIAL_JSON_MSG_TYPE,
-      getUserDecorator(ROOTS_BOT))
+      getUserItem(ROOTS_BOT))
 }
 
 async function initDemoIntro() {
@@ -838,13 +845,13 @@ async function initDemoResume() {
 }
 
 async function initDemoUserDisplays() {
-    await createUserDecorator(ROOTS_BOT,
+    await createUserItem(ROOTS_BOT,
                   "RootsWallet",
                   rootsLogo)
-    await createUserDecorator(PRISM_BOT,
+    await createUserItem(PRISM_BOT,
                   "Atala Prism",
                   prismLogo)
-    await createUserDecorator(
+    await createUserItem(
                   LIBRARY_BOT,
                   "Library",
                   personLogo)

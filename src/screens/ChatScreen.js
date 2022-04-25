@@ -8,8 +8,8 @@ import { Actions, ActionsProps, Bubble, ChatInput,
 //import emojiUtils from 'emoji-utils';
 
 import { BLOCKCHAIN_URI_MSG_TYPE, createDemoCredential, getMessages,
-    getChatDecorator, getFakePromise,
-    getFakePromiseAsync, getQuickReplyResultMessage, getUserDecorator, isDemo, isProcessing,
+    getChatItem, getFakePromise,
+    getFakePromiseAsync, getQuickReplyResultMessage, getUserItem, isDemo, isProcessing,
     processQuickReply,
     sendMessage, sendMessages, startChatSession,
     TEXT_MSG_TYPE } from '../roots';
@@ -21,8 +21,8 @@ const { PrismModule } = NativeModules;
 export default function ChatScreen({ route }) {
     console.log("ChatScreen - route params",route.params)
 //  const [ user, setUser ] = useState(user);
-    const [chat, setChat] = useState(getChatDecorator(route.params.chatId));
-    console.log("ChatScreen - got chatDecorator ",chat)
+    const [chat, setChat] = useState(getChatItem(route.params.chatId));
+    console.log("ChatScreen - got chatItem ",chat)
 //    const [hasPermission, setHasPermission] = useState(null);
     const [loading, setLoading] = useState(true);
     const [madeCredential, setMadeCredential] = useState(false)
@@ -157,7 +157,7 @@ export default function ChatScreen({ route }) {
 
     async function handleSend(pendingMsgs) {
         console.log("ChatScreen - handle send",pendingMsgs)
-        const result = await sendMessages(chat, pendingMsgs, TEXT_MSG_TYPE, getUserDecorator(chat.id));
+        const result = await sendMessages(chat, pendingMsgs, TEXT_MSG_TYPE, getUserItem(chat.id));
 //        await setMessages((prevMessages) => GiftedChat.append(prevMessages, pendingMsgs));
     }
 
@@ -345,7 +345,7 @@ export default function ChatScreen({ route }) {
           renderBubble={renderBubble}
           renderUsernameOnMessage={true}
           showAvatarForEveryMessage={true}
-          user={mapUser(getUserDecorator(chat.id))}
+          user={mapUser(getUserItem(chat.id))}
       />
     </View>
   );
@@ -361,7 +361,7 @@ export default function ChatScreen({ route }) {
       mappedMsg["_id"] = message.id
       mappedMsg["text"] = message.body
       mappedMsg["createdAt"] = new Date(message.createdTime)
-      mappedMsg["user"] = mapUser(getUserDecorator(message.user))
+      mappedMsg["user"] = mapUser(getUserItem(message.user))
       if(message["image"]) {
         mappedMsg["image"] = message["image"]
       }

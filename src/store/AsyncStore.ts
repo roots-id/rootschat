@@ -1,18 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logging'
 
-export async function getDecorator(alias: string) {
+export async function getItem(key: string) {
   try {
-    const decoratorJson = await AsyncStorage.getItem(alias)
-    if(!decoratorJson || decoratorJson == null) {
-        logger("AsyncStore - no decorator found for name",alias)
+    const item = await AsyncStorage.getItem(key)
+    if(!item || item == null) {
+        logger("AsyncStore - no item found for name",key)
         return null;
     } else {
-        logger("AsyncStore - decorator found",alias)
-        return decoratorJson
+        logger("AsyncStore - item found",key)
+        return item
     }
   } catch(e) {
-    console.error("AsyncStore - Could not get async decorator",alias,error)
+    console.error("AsyncStore - Could not get async item",key,error)
     return null;
   }
   return null;
@@ -48,15 +48,15 @@ export async function getWallet(walName: string) {
   return null;
 }
 
-export async function hasDecorator(alias: string) {
-    const decoratorJson = await getDecorator(alias)
-    const hasDecorator = !(!decoratorJson || decoratorJson == null);
-    if(hasDecorator) {
-        logger("AsyncStore - has decorator",alias,decoratorJson)
+export async function hasItem(alias: string) {
+    const item = await getItem(alias)
+    const hasItem = !(!item || item == null);
+    if(hasItem) {
+        logger("AsyncStore - has item",alias,item)
     } else {
-        logger("AsyncStore - no decorator found",alias)
+        logger("AsyncStore - no item found",alias)
     }
-    return hasDecorator;
+    return hasItem;
 }
 
 export async function hasWallet(walName: string) {
@@ -82,16 +82,16 @@ export async function status() {
   logger("AsyncStore - keys:",keys)
 }
 
-export async function storeDecorator(alias: string, decoratorJson: string) {
+export async function storeItem(alias: string, item: string) {
     try {
-        logger('AsyncStore - start storing decorator',alias)
-        const oldDecorator = await AsyncStorage.setItem(alias, decoratorJson)
-        if(oldDecorator && oldDecorator !== null) {
-          logger("AsyncStore - Replace previous decorator",alias,oldDecorator)
+        logger('AsyncStore - start storing item',alias)
+        const oldItem = await AsyncStorage.setItem(alias, item)
+        if(oldItem && oldItem !== null) {
+          logger("AsyncStore - Replace previous item",alias,oldItem)
         }
         return true;
     } catch(error) {
-        console.error("AsyncStore - Could not store async decorator",alias,error)
+        console.error("AsyncStore - Could not store async item",alias,error)
         return false;
     }
     return false;
